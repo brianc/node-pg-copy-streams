@@ -1,0 +1,32 @@
+{
+  "name": "pg-copy-streams",
+  "version": "0.0.0",
+  "description": "Low-Level COPY TO and COPY FROM streams for PostgreSQL in JavaScript using",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/brianc/node-pg-copy-streams.git"
+  },
+  "keywords": [
+    "postgres",
+    "copy",
+    "in",
+    "out",
+    "stream"
+  ],
+  "author": "Brian M. Carlson",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/brianc/node-pg-copy-streams/issues"
+  },
+  "devDependencies": {
+    "pg.js": "~2.8.1",
+    "concat-stream": "~1.1.0",
+    "gonna": "0.0.0",
+    "lodash": "~2.2.1",
+    "heroku-env": "~0.1.1"
+  }
+}

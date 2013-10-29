@@ -10,13 +10,11 @@ var CopyStreamQuery = function(text) {
   this.text = text
   this._listeners = null
   this._copyOutResponse = null
-  this.rowsRead = 0
 }
 
 util.inherits(CopyStreamQuery, Transform)
 
 CopyStreamQuery.prototype.submit = function(connection) {
-  console.log('submitting')
   connection.query(this.text)
   this.connection = connection
   this._listeners = connection.stream.listeners('data')
@@ -79,8 +77,8 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
       offset += 5
       var slice = chunk.slice(offset, offset + length)
       offset += length
-      this.rowsRead++
       this.push(slice)
+      this.emit('row')
     } else {
       break;
     }

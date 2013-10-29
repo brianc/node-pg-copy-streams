@@ -20,6 +20,10 @@ var testRange = function(top) {
   var txt = 'COPY numbers FROM STDIN'
 
   var stream = fromClient.query(copy(txt))
+  var rowEmitCount = 0
+  stream.on('row', function() {
+    rowEmitCount++
+  })
   for(var i = 0; i < top; i++) {
     stream.write(Buffer('' + i + '\t' + i*10 + '\n'))
   }
@@ -32,6 +36,7 @@ var testRange = function(top) {
       console.log('found ', res.rows.length, 'rows')
       countDone()
       var firstRowDone = gonna('have correct result')
+      assert.equal(rowEmitCount, top, 'should have emitted "row" event ' + top + ' times')
       fromClient.query('SELECT (max(num)) AS num FROM numbers', function(err, res) {
         assert.ifError(err)
         assert.equal(res.rows[0].num, top-1)

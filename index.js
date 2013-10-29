@@ -39,6 +39,7 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   lenBuffer.writeUInt32BE(chunk.length + 4, 0)
   this.push(lenBuffer)
   this.push(chunk)
+  this.emit('row')
   cb()
 }
 

@@ -17,6 +17,7 @@ var CopyStreamQuery = function(text) {
   this.text = text
   this._listeners = null
   this._copyOutResponse = null
+  this.rowCount = 0
 }
 
 util.inherits(CopyStreamQuery, Transform)
@@ -39,7 +40,7 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   lenBuffer.writeUInt32BE(chunk.length + 4, 0)
   this.push(lenBuffer)
   this.push(chunk)
-  this.emit('row')
+  this.rowCount++
   cb()
 }
 

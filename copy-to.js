@@ -10,6 +10,7 @@ var CopyStreamQuery = function(text) {
   this.text = text
   this._listeners = null
   this._copyOutResponse = null
+  this.rowCount = 0
 }
 
 util.inherits(CopyStreamQuery, Transform)
@@ -78,7 +79,7 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
       var slice = chunk.slice(offset, offset + length)
       offset += length
       this.push(slice)
-      this.emit('row')
+      this.rowCount++
     } else {
       break;
     }

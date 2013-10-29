@@ -36,7 +36,7 @@ var testRange = function(top) {
       console.log('found ', res.rows.length, 'rows')
       countDone()
       var firstRowDone = gonna('have correct result')
-      assert.equal(rowEmitCount, top, 'should have emitted "row" event ' + top + ' times')
+      assert.equal(stream.rowCount, top, 'should have rowCount ' + top + ' ')
       fromClient.query('SELECT (max(num)) AS num FROM numbers', function(err, res) {
         assert.ifError(err)
         assert.equal(res.rows[0].num, top-1)

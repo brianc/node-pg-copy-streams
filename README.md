@@ -15,7 +15,7 @@ If you're not familiar with the feature (I wasn't either) you can read this for 
 
 ## examples
 
-### pipe from table to stdout
+### pipe from a table to stdout
 
 ```js
 var pg = require('pg');

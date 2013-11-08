@@ -62,7 +62,7 @@ Better yet, submit a pull request.  I _love_ pull requests.
 
 Generally how I work is if you submit a few pull requests and you're interested I'll make you a contributor and give you full access to everything.
 
-Since this isn't a module with tons of installs and dependants I hope we can work together on this to itterate faster here.
+Since this isn't a module with tons of installs and dependent modules I hope we can work together on this to iterate faster here and make something really useful.
 
 ## license
 

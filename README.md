@@ -10,8 +10,7 @@ This means you can take your favorite CSV or TSV or whatever format file and pip
 You can also take a table and pipe it directly to a file, another database, stdout, even to `/dev/null` if you're crazy!
 
 What this module gives you is a [Readable](http://nodejs.org/api/stream.html#stream_class_stream_readable) or [Writable](http://nodejs.org/api/stream.html#stream_class_stream_writable) stream directly into/out of a table in your database.
-This mode of interfacing with your table is _very fast_ and _very brittle_.  You are responsible for properly encoding and ordering all your columns. If anything is out of place PostgreSQL will send you back an error.  
-The stream works within a transaction so you wont leave things in a 1/2 borked state, but it's still good to be aware of.
+This mode of interfacing with your table is _very fast_ and _very brittle_.  You are responsible for properly encoding and ordering all your columns. If anything is out of place PostgreSQL will send you back an error.  The stream works within a transaction so you wont leave things in a 1/2 borked state, but it's still good to be aware of.
 
 If you're not familiar with the feature (I wasn't either) you can read this for some good helps: http://www.postgresql.org/docs/9.3/static/sql-copy.html
 

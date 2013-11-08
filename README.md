@@ -1,4 +1,4 @@
-`npm install pg-copy-streams`
+## pg-copy-streams
 
 COPY FROM / COPY TO for node-postgres.  Stream from one database to another, and stuff.
 
@@ -44,6 +44,12 @@ pg.connect(function(err, client, done) {
   fileStream.on('end', done);
   fileStream.on('error', done);
 });
+```
+
+## install
+
+```sh
+$ npm install pg-copy-streams
 ```
 
 ## notice

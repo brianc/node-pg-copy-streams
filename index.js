@@ -55,7 +55,7 @@ CopyStreamQuery.prototype.handleError = function(e) {
   this.emit('error', e)
 }
 
-CopyStreamQuery.prototype.streamData = function(connection) {
+CopyStreamQuery.prototype.handleCopyInResponse = function(connection) {
   this.pipe(connection.stream)
 }
 

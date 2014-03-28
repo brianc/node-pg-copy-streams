@@ -8,18 +8,23 @@ var util = require('util')
 var CopyStreamQuery = function(text) {
   Transform.call(this)
   this.text = text
-  this._listeners = null
+  this._listeners = {}
   this._copyOutResponse = null
   this.rowCount = 0
 }
 
 util.inherits(CopyStreamQuery, Transform)
 
+var eventTypes = ['close', 'data', 'end']
+
 CopyStreamQuery.prototype.submit = function(connection) {
   connection.query(this.text)
   this.connection = connection
-  this._listeners = connection.stream.listeners('data')
-  connection.stream.removeAllListeners('data')
+  var self = this
+  eventTypes.forEach(function(type) {
+    self._listeners[type] = connection.stream.listeners(type)
+    connection.stream.removeAllListeners(type)
+  })
   connection.stream.pipe(this)
 }
 
@@ -32,10 +37,12 @@ var code = {
 
 CopyStreamQuery.prototype._detach = function() {
   this.connection.stream.unpipe()
-  this.connection.stream.removeAllListeners('data')
   var self = this
-  this._listeners.forEach(function(listener) {
-    self.connection.stream.on('data', listener)
+  eventTypes.forEach(function(type) {
+    self.connection.stream.removeAllListeners(type)
+    self._listeners[type].forEach(function(listener) {
+      self.connection.stream.on(type, listener)
+    })
   })
 }
 

@@ -49,9 +49,10 @@ var testLeak = function(rounds) {
 
   async.timesSeries(rounds, runStream, function(err) {
     assert.equal(err, null)
+    assert.equal(fromClient.connection.stream.listeners('close').length, 0)
     assert.equal(fromClient.connection.stream.listeners('data').length, 1)
     assert.equal(fromClient.connection.stream.listeners('end').length, 2)
-    assert.equal(fromClient.connection.stream.listeners('close').length, 0)
+    assert.equal(fromClient.connection.stream.listeners('error').length, 1)
     fromClient.end()
   })
 }

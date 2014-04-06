@@ -15,7 +15,7 @@ var CopyStreamQuery = function(text) {
 
 util.inherits(CopyStreamQuery, Transform)
 
-var eventTypes = ['close', 'data', 'end']
+var eventTypes = ['close', 'data', 'end', 'error']
 
 CopyStreamQuery.prototype.submit = function(connection) {
   connection.query(this.text)

@@ -68,10 +68,14 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   }
   while((chunk.length - offset) > 5) {
     var messageCode = chunk[offset]
-    //complete
-    if(messageCode == code.c) {
+    //complete or error
+    if(messageCode == code.c || messageCode == code.E) {
       this._detach()
-      this.connection.stream.unshift(chunk.slice(offset + 5))
+      if (messageCode == code.c) {
+        this.connection.stream.unshift(chunk.slice(offset + 5))
+      } else {
+        this.connection.stream.unshift(chunk.slice(offset))
+      }
       this.push(null)
       return cb();
     }

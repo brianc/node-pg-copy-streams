@@ -58,3 +58,26 @@ var testLeak = function(rounds) {
 }
 
 testLeak(5)
+
+var testInternalPostgresError = function() {
+  var fromClient = client()
+  // This attempts to make an array that's too large, and should fail.
+  var txt = "COPY (SELECT array_agg(e) FROM (SELECT generate_series(1, 100000000) AS e) t) TO STDOUT"
+
+  var runStream = function(callback) {
+    var stream = fromClient.query(copy(txt))
+    stream.on('data', function(data) {
+      // Just throw away the data.
+    })
+    stream.on('error', callback)
+  }
+
+  runStream(function(err) {
+    assert.notEqual(err, null)
+    expectedMessage = 'invalid memory alloc request size'
+    assert.notEqual(err.toString().indexOf(expectedMessage), -1, 'Error message should mention memory alloc request size.')
+    fromClient.end()
+  })
+}
+
+testInternalPostgresError()

@@ -53,6 +53,8 @@ $ npm install pg-copy-streams
 
 ## notice
 
+This module __only__ works with the pure JavaScript bindings.  If you're using `require('pg').native` please make sure to use normal `require('pg')` or `require('pg.js')` when you're using copy streams. 
+
 Before you set out on this magical piping journey, you _really_ should read this: http://www.postgresql.org/docs/9.3/static/sql-copy.html, and you might want to take a look at the [tests](https://github.com/brianc/node-pg-copy-streams/tree/master/test) to get an idea of how things work.
 
 ## contributing 

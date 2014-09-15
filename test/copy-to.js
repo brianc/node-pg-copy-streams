@@ -14,6 +14,14 @@ var client = function() {
   return client
 }
 
+var testConstruction = function() {
+  var txt = 'COPY (SELECT * FROM generate_series(0, 10)) TO STDOUT'
+  var stream = copy(txt, {highWaterMark: 10})
+  assert.equal(stream._readableState.highWaterMark, 10, 'Client should have been set with a correct highWaterMark.')
+}
+
+testConstruction()
+
 var testRange = function(top) {
   var fromClient = client()
   var txt = 'COPY (SELECT * from generate_series(0, ' + (top - 1) + ')) TO STDOUT'

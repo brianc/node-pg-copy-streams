@@ -5,20 +5,30 @@ var concat = require('concat-stream')
 var _ = require('lodash')
 var pg = require('pg.js')
 
-var testRange = function(top) {
-  var client = function() {
-    var client = new pg.Client()
-    client.connect()
-    client.query('CREATE TEMP TABLE numbers(num int, bigger_num int)')
-    return client
+var copy = require('../').from
+
+var client = function() {
+  var client = new pg.Client()
+  client.connect()
+  return client
+}
+
+var testConstruction = function() {
+  var highWaterMark = 10
+  var stream = copy('COPY numbers FROM STDIN', {highWaterMark: 10, objectMode: true})
+  for(var i = 0; i < highWaterMark * 1.5; i++) {
+    stream.write('1\t2\n')
   }
+  assert(!stream.write('1\t2\n'), 'Should correctly set highWaterMark.')
+}
 
+testConstruction()
+
+var testRange = function(top) {
   var fromClient = client()
-  var copy = require('../').from
-
+  fromClient.query('CREATE TEMP TABLE numbers(num int, bigger_num int)')
 
   var txt = 'COPY numbers FROM STDIN'
-
   var stream = fromClient.query(copy(txt))
   var rowEmitCount = 0
   stream.on('row', function() {

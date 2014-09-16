@@ -1,5 +1,7 @@
 ## pg-copy-streams
 
+[![Build Status](https://travis-ci.org/brianc/node-pg-copy-streams.svg)](https://travis-ci.org/brianc/node-pg-copy-streams)
+
 COPY FROM / COPY TO for node-postgres.  Stream from one database to another, and stuff.
 
 ## how? what? huh?

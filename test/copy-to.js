@@ -68,21 +68,29 @@ var testLeak = function(rounds) {
 testLeak(5)
 
 var testInternalPostgresError = function() {
-  var fromClient = client()
-  // This attempts to make an array that's too large, and should fail.
-  var txt = "COPY (SELECT asdlfsdf AS e) t) TO STDOUT"
+  var cancelClient = client()
+  var queryClient = client()
 
   var runStream = function(callback) {
-    var stream = fromClient.query(copy(txt))
+    var txt = "COPY (SELECT pg_sleep(10)) TO STDOUT"
+    var stream = queryClient.query(copy(txt))
     stream.on('data', function(data) {
       // Just throw away the data.
     })
     stream.on('error', callback)
+
+    setTimeout(function() {
+      var cancelQuery = "SELECT pg_cancel_backend(pid) FROM pg_stat_activity WHERE query ~ 'pg_sleep' AND NOT query ~ 'pg_cancel_backend'"
+      cancelClient.query(cancelQuery)
+    }, 50)
   }
 
   runStream(function(err) {
     assert.notEqual(err, null)
-    fromClient.end()
+    var expectedMessage = 'canceling statement due to user request'
+    assert.notEqual(err.toString().indexOf(expectedMessage), -1, 'Error message should mention reason for query failure.')
+    cancelClient.end()
+    queryClient.end()
   })
 }
 

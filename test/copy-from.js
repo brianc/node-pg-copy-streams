@@ -43,7 +43,7 @@ var testRange = function(top) {
     fromClient.query('SELECT COUNT(*) FROM numbers', function(err, res) {
       assert.ifError(err)
       assert.equal(res.rows[0].count, top, 'expected ' + top + ' rows but got ' + res.rows[0].count)
-      console.log('found ', res.rows.length, 'rows')
+      //console.log('found ', res.rows.length, 'rows')
       countDone()
       var firstRowDone = gonna('have correct result')
       assert.equal(stream.rowCount, top, 'should have rowCount ' + top + ' ')

@@ -1,3 +1,3 @@
-require('./copy-from')
-require('./copy-to')
-require('./binary')
+require('./copyFrom');
+require('./copyTo');
+require('./binary');

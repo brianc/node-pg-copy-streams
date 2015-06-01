@@ -1,7 +1,6 @@
 Transform      = require('stream').Transform
 codes          = require('./codes')
-copyDataBuffer = Buffer([codes.copyData])
-finBuffer      = Buffer([codes.copyDone, 0, 0, 0, 4])
+protocolHelper = require('./protocolHelper')
 
 module.exports = class CopyFromQueryStream extends Transform
 
@@ -9,37 +8,24 @@ module.exports = class CopyFromQueryStream extends Transform
     Transform.call @, @options
     @rowCount = 0
 
+  createMessage: protocolHelper.createMessage
 
-  submit: (@connection) ->
-    @connection.query @text
+  submit: (@connection) -> @connection.query @text
 
+  handleError: (e) -> @emit 'error', e
 
-  handleError: (e) ->
-    @emit 'error', e
+  handleReadyForQuery: ->
 
+  handleCopyInResponse: (@connection) -> @pipe @connection.stream
 
   handleCommandComplete: (msg, con) ->
     @unpipe()
     @emit 'end'
 
-
-  handleReadyForQuery: ->
-
-
-  handleCopyInResponse: (@connection) ->
-    @pipe @connection.stream
-
-
-  _flush: (cb) ->
-    @push finBuffer
-    # Never call the callback, do not close underlying stream.
-
+  # Never call the callback, do not close underlying stream.
+  _flush: (cb) -> @push @createMessage codes.copyDone, Buffer 0
 
   _transform: (chunk, enc, cb) ->
-    @push copyDataBuffer
-    lenBuffer = Buffer 4
-    lenBuffer.writeUInt32BE chunk.length + 4, 0
-    @push lenBuffer
-    @push chunk
+    @push @createMessage codes.copyData, chunk
     @rowCount++
     cb()

@@ -1,7 +1,6 @@
 Transform      = require('stream').Transform
 codes          = require('./codes')
-copyDataBuffer = Buffer([codes.copyData])
-finBuffer      = Buffer([codes.copyDone, 0, 0, 0, 4])
+protocolHelper = require('./protocolHelper')
 eventTypes     = ['close', 'data', 'end', 'error']
 
 module.exports = class CopyToQueryStream extends Transform
@@ -9,9 +8,18 @@ module.exports = class CopyToQueryStream extends Transform
   constructor: (@text, options) ->
     Transform.call @, options
     @_listeners = {}
-    @_copyOutResponse = null
     @rowCount = 0
+    @firstPass = true
+    @remainder = false
 
+  shiftMessage: protocolHelper.shiftMessage
+
+  cleanStream: (chunk) ->
+    @connection.stream.pause()
+    @_detach()
+    @connection.stream.unshift chunk
+    @push null
+    @connection.stream.resume()
 
   submit: (@connection) ->
     @connection.query @text
@@ -21,16 +29,11 @@ module.exports = class CopyToQueryStream extends Transform
 
     @connection.stream.pipe @
 
-
-  handleError: (e) ->
-    @emit 'error', e
-
+  handleError: (e) -> @emit 'error', e
 
   handleCommandComplete: ->
 
-
   handleReadyForQuery: ->
-
 
   _detach: ->
     @connection.stream.unpipe()
@@ -39,68 +42,60 @@ module.exports = class CopyToQueryStream extends Transform
       @_listeners[type].forEach (listener) =>
         @connection.stream.on type, listener
 
-
   _transform: (chunk, enc, cb) ->
-    length = null
-    slice  = null
-    offset = 0
+    if chunk and @remainder
+      chunk = Buffer.concat [@remainder, chunk]
 
-    if @_remainder and chunk
-      chunk = Buffer.concat [@_remainder, chunk]
+    loop
+      { code, length, message, chunk } = @shiftMessage chunk
 
-    if not @_copyOutResponse
-      @_copyOutResponse = true
+      # If this is the first time we've been called make sure we got
+      # a copy out response message code.
+      if @firstPass
+        @firstPass = false
+        if code is not codes.copyOutResponse
+          return @emit 'error', new Error "First message was not a copy out response"
 
-      if chunk[0] is codes.error
-        @connection.stream.pause()
-        @_detach()
-        @connection.stream.unshift chunk
-        @push null
-        @connection.stream.resume()
+        continue
+
+      # We've exhausted the sane messages in this chunk, grab the
+      # remainder and hold it for the next pass.
+      if code is null
+        @remainder = chunk
         return cb()
 
-      if chunk[0] isnt codes.copyOutResponse
-        @emit 'error', new Error 'Expected copy out response'
+      # Ignore these two control messages.
+      continue if code is codes.noticeResponse
+      continue if code is codes.parameterStatus
 
-      length = chunk.readUInt32BE 1
-      offset = 1
-      offset += length
-    # end not @_copyOutResponse
-
-    while (chunk.length - offset) > 5
-      messagecodes = chunk[offset]
-      if messagecodes is codes.copyDone or messagecodes is codes.error
-        @connection.stream.pause()
-        @_detach()
-        if messagecodes is codes.copyDone
-          @connection.stream.unshift(chunk.slice(offset + 5))
-        else
-          @connection.stream.unshift(chunk.slice(offset))
-
-        @push null
-        @connection.stream.resume()
+      # Postgres has said we're done here.
+      if code is codes.close
+        # Here we can get the rows affected right from the horse's mouth.
+        @rowCount = parseInt message[5..-2].toString('utf8'), 10
         return cb()
-      # end if
 
-      if messagecodes isnt codes.copyData
-        return @emit 'error', new Error 'expected "d" (copydata message)'
+      # Something bad happened, stop here.
+      if code is codes.error
+        @cleanStream chunk
+        @emit 'error', new Error "Error during copy: #{ message }"
+        return cb()
 
-      length = chunk.readUInt32BE(offset + 1) - 4 # Subtract the len of UInt32
+      # This happens after codes.close, so we should have already called
+      # back without getting here.
+      if code is codes.readyForQuery
+        # really bad stuff happened if we got here.
+        @emit 'error', "Got ready for query response before close."
+        return cb()
 
-      if chunk.length > (offset + length + 5)
-        offset += 5
-        slice = chunk.slice offset, offset + length
-        offset += length
-        @push slice
-        @rowCount++
-      else
-        break
-    # end while
+      # We're finished getting actual data elements, we'll get our rows
+      # affected here in a bit.
+      if code is codes.copyDone
+        @cleanStream chunk
+        continue
 
-    if chunk.length - offset
-      slice = chunk.slice offset
-      @_remainder = slice
-    else
-      @_remainder = false
+      # Here's a complete row of data.
+      if code is codes.copyData
+        @push message
+        continue
 
-    cb()
+      @emit 'error', new Error "Received unknown message code from server: #{ code }"

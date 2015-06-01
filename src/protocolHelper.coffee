@@ -17,6 +17,14 @@ module.exports =
     out.message = chunk.slice 5, out.length + 1
     out.chunk   = chunk.slice out.length + 1
 
+    if (out.message.length + 4) < out.length
+      # We don't have all of the message yet.
+      out.code    = null
+      out.length  = null
+      out.message = null
+      out.chunk   = chunk
+      return out
+
     return out
 
   createMessage: (code, chunk) ->

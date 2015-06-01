@@ -52,9 +52,11 @@ module.exports = class CopyToQueryStream extends Transform
       @_copyOutResponse = true
 
       if chunk[0] is codes.error
+        @connection.stream.pause()
         @_detach()
         @connection.stream.unshift chunk
         @push null
+        @connection.stream.resume()
         return cb()
 
       if chunk[0] isnt codes.copyOutResponse
@@ -68,6 +70,7 @@ module.exports = class CopyToQueryStream extends Transform
     while (chunk.length - offset) > 5
       messagecodes = chunk[offset]
       if messagecodes is codes.copyDone or messagecodes is codes.error
+        @connection.stream.pause()
         @_detach()
         if messagecodes is codes.copyDone
           @connection.stream.unshift(chunk.slice(offset + 5))
@@ -75,6 +78,7 @@ module.exports = class CopyToQueryStream extends Transform
           @connection.stream.unshift(chunk.slice(offset))
 
         @push null
+        @connection.stream.resume()
         return cb()
       # end if
 

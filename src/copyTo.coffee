@@ -43,9 +43,13 @@ module.exports = class CopyToQueryStream extends Transform
         @connection.stream.on type, listener
 
   _transform: (chunk, enc, cb) ->
+    # If we have a remainder from the last iteration ensure that we
+    # start with it.
     if chunk and @remainder
       chunk = Buffer.concat [@remainder, chunk]
 
+    # This loop will operate until we can't get any more messages out
+    # of the chunk or something bad happens.
     loop
       { code, length, message, chunk } = @shiftMessage chunk
 
@@ -58,44 +62,48 @@ module.exports = class CopyToQueryStream extends Transform
 
         continue
 
-      # We've exhausted the sane messages in this chunk, grab the
-      # remainder and hold it for the next pass.
-      if code is null
-        @remainder = chunk
-        return cb()
+      switch code
 
-      # Ignore these two control messages.
-      continue if code is codes.noticeResponse
-      continue if code is codes.parameterStatus
+        when codes.copyData
+          # Here's a complete row of data.
+          @push message
+          continue
 
-      # Postgres has said we're done here.
-      if code is codes.close
-        # Here we can get the rows affected right from the horse's mouth.
-        @rowCount = parseInt message[5..-2].toString('utf8'), 10
-        return cb()
+        when null
+          # We've exhausted the sane messages in this chunk, grab the
+          # remainder and hold it for the next pass.
+          @remainder = chunk
+          return cb()
 
-      # Something bad happened, stop here.
-      if code is codes.error
-        @cleanStream chunk
-        @emit 'error', new Error "Error during copy: #{ message }"
-        return cb()
+        when codes.copyDone
+          # We're finished getting actual data elements, we'll get our rows
+          # affected here in a bit.
+          @cleanStream chunk
+          continue
 
-      # This happens after codes.close, so we should have already called
-      # back without getting here.
-      if code is codes.readyForQuery
-        # really bad stuff happened if we got here.
-        @emit 'error', "Got ready for query response before close."
-        return cb()
+        when codes.close
+          # Postgres has said we're done here. We can get the rows
+          # affected right from the horse's mouth.
+          @rowCount = parseInt message[5..-2].toString('utf8'), 10
+          return cb()
 
-      # We're finished getting actual data elements, we'll get our rows
-      # affected here in a bit.
-      if code is codes.copyDone
-        @cleanStream chunk
-        continue
+        when codes.error
+          # Something bad happened, stop here.
+          @cleanStream chunk
+          @emit 'error', new Error "Error during copy: #{ message }"
+          return cb()
 
-      # Here's a complete row of data.
-      if code is codes.copyData
-        @push message
-        continue
+        when codes.noticeResponse, codes.parameterStatus
+          # http://www.postgresql.org/docs/9.4/static/protocol-flow.html#COPY-Operations
+          #
+          # > It is possible for NoticeResponse and ParameterStatus messages to
+          # > be interspersed between CopyData messages; frontends must handle
+          # > these cases, and should be prepared for other asynchronous message
+          # > types as well (see Section 49.2.6). Otherwise, any message type
+          # > other than CopyData or CopyDone may be treated as terminating
+          # > copy-out mode.
+          continue
 
-      @emit 'error', new Error "Received unknown message code from server: #{ code }"
+        else
+          @emit 'error', new Error "Received unexpected code: #{ code }"
+          return cb()

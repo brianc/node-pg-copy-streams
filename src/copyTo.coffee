@@ -57,8 +57,9 @@ module.exports = class CopyToQueryStream extends Transform
       # a copy out response message code.
       if @firstPass
         @firstPass = false
-        if code is not codes.copyOutResponse
-          return @emit 'error', new Error "First message was not a copy out response"
+        if code isnt codes.copyOutResponse
+          @emit 'error', new Error "First message was not a copy out response"
+          return cb()
 
         continue
 

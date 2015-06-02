@@ -24,6 +24,20 @@ describe 'copy to', ->
       expect(stream.rowCount).to.equal(1000)
       done()
 
+  it 'should deal with really large messages', (done) ->
+    client = getClient()
+    txt    = "COPY (SELECT lpad('', 1000000, 'a')) TO STDOUT"
+    stream = client.query copyTo txt
+
+    stream.on 'end', ->
+      client.end()
+
+    stream.pipe concat (buf) ->
+      res = buf.toString 'utf8'
+      # 10001 because it ends with a \n
+      expect(res.length).to.equal(1000001)
+      done()
+
   it 'should not leak listeners between calls', (done) ->
     client = getClient()
     nClose = client.connection.stream.listeners('close').length
@@ -38,7 +52,6 @@ describe 'copy to', ->
       stream.on 'data', (data) ->
       stream.on 'end', cb
       stream.on 'error', cb
-      return
 
     async.timesSeries 5, runStream, (err) ->
       expect(err).to.be.null
@@ -48,8 +61,6 @@ describe 'copy to', ->
       expect(client.connection.stream.listeners('end').length).to.equal(nEnd)
       expect(client.connection.stream.listeners('error').length).to.equal(nError)
       done()
-      return
-    return
 
   it 'should error when a query is cancelled inside Postgres', (done) ->
     client       = getClient()

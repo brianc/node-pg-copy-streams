@@ -1,8 +1,9 @@
 language: node_js
 node_js:
   - "0.10"
-  - "0.11"
-before_install:
-  - npm install npm --global
-env:
-  - PGUSER=postgres PGDATABASE=postgres
+  - "0.12"
+  - "iojs"
+addons:
+  postgresql: "9.4"
+before_script:
+  - psql -c 'create database travis;' -U postgres

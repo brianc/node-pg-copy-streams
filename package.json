@@ -4,7 +4,8 @@
   "description": "Low-Level COPY TO and COPY FROM streams for PostgreSQL in JavaScript using",
   "main": "src/index.js",
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha --compilers coffee:coffee-script/register"
+    "test": "./node_modules/mocha/bin/mocha --compilers coffee:coffee-script/register",
+    "lint": "./node_modules/coffeelint/bin/coffeelint **/*.coffee"
   },
   "repository": {
     "type": "git",
@@ -18,6 +19,10 @@
     "stream"
   ],
   "author": "Brian M. Carlson",
+  "contributors": [{
+    "name": "Eric Biven",
+    "email": "eric@biven.us"
+  }],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/brianc/node-pg-copy-streams/issues"
@@ -25,23 +30,13 @@
   "devDependencies": {
     "async": "~0.2.10",
     "chai": "^2.3.0",
+    "coffeelint": "^1.10.1",
     "concat-stream": "^1.4.8",
-    "gulp": "^3.8.11",
-    "gulp-coffeelint": "^0.5.0",
-    "gulp-jshint": "^1.11.0",
-    "gulp-mocha": "^2.1.0",
-    "gulp-notify": "^2.2.0",
-    "gulp-util": "^3.0.5",
     "lodash": "^3.9.3",
-    "map-stream": "0.0.5",
-    "minimist": "^1.1.1",
     "mocha": "^2.2.5",
-    "node-notifier": "^4.2.1",
     "pg": "^4.3.0",
-    "pretty-hrtime": "^1.0.0",
     "sinon": "^1.14.1",
-    "sinon-chai": "^2.7.0",
-    "through2": "^0.6.5"
+    "sinon-chai": "^2.7.0"
   },
   "dependencies": {
     "coffee-script": "^1.9.3"

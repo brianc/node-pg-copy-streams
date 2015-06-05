@@ -94,7 +94,7 @@ module.exports = class CopyToQueryStream extends Transform
           @emit 'error', new Error "Error during copy: #{ message }"
           return cb()
 
-        when codes.noticeResponse, codes.parameterStatus
+        when codes.noticeResponse, codes.parameterStatus, codes.notificationResponse
           # http://www.postgresql.org/docs/9.4/static/protocol-flow.html#COPY-Operations
           #
           # > It is possible for NoticeResponse and ParameterStatus messages to

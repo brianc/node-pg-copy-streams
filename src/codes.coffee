@@ -3,11 +3,12 @@
 # This list only includes the codes we expect to get.
 #
 module.exports =
-  error           : 'E'
-  copyOutResponse : 'H'
-  copyData        : 'd'
-  copyDone        : 'c'
-  close           : 'C'
-  noticeResponse  : 'N'
-  parameterStatus : 'S'
-  readyForQuery   : 'Z'
+  error                : 'E'
+  copyOutResponse      : 'H'
+  copyData             : 'd'
+  copyDone             : 'c'
+  close                : 'C'
+  noticeResponse       : 'N'
+  notificationResponse : 'A'
+  parameterStatus      : 'S'
+  readyForQuery        : 'Z'

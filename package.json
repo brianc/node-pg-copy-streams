@@ -4,7 +4,7 @@
   "description": "Low-Level COPY TO and COPY FROM streams for PostgreSQL in JavaScript using",
   "main": "src/index.js",
   "scripts": {
-    "test": "gulp test"
+    "test": "./node_modules/mocha/bin/mocha --compilers coffee:coffee-script/register"
   },
   "repository": {
     "type": "git",

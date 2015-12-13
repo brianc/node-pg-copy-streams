@@ -54,9 +54,11 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   if(!this._copyOutResponse) {
     this._copyOutResponse = true
     if(chunk[0] == code.E) {
+      this.connection.stream.pause();
       this._detach()
-      this.connection.stream.unshift(chunk)
-      this.push(null)
+      this.connection.stream.unshift(chunk);
+      this.push(null);
+      this.connection.stream.resume();
       return cb();
     }
     if(chunk[0] != code.H) {
@@ -70,13 +72,15 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
     var messageCode = chunk[offset]
     //complete or error
     if(messageCode == code.c || messageCode == code.E) {
+      this.connection.stream.pause();
       this._detach()
       if (messageCode == code.c) {
         this.connection.stream.unshift(chunk.slice(offset + 5))
       } else {
         this.connection.stream.unshift(chunk.slice(offset))
       }
-      this.push(null)
+      this.push(null);
+      this.connection.stream.resume();
       return cb();
     }
     //something bad happened

@@ -2,6 +2,14 @@ language: node_js
 node_js:
   - "0.10"
   - "0.11"
+  - "4.2.2"
+
+addons:
+  postgresql: "9.2"
+
+services:
+  - postgresql
+
 before_install:
   - npm install npm --global
 env:

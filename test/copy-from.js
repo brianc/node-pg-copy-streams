@@ -3,7 +3,7 @@ var gonna = require('gonna')
 
 var concat = require('concat-stream')
 var _ = require('lodash')
-var pg = require('pg.js')
+var pg = require('pg')
 
 var copy = require('../').from
 

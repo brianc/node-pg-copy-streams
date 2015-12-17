@@ -19,6 +19,7 @@ var eventTypes = ['close', 'data', 'end', 'error']
 CopyStreamQuery.prototype.submit = function(connection) {
   connection.query(this.text)
   this.connection = connection
+  this.connection.removeAllListeners('copyData')
   connection.stream.pipe(this)
 }
 
@@ -31,6 +32,8 @@ var code = {
 
 CopyStreamQuery.prototype._detach = function() {
   this.connection.stream.unpipe(this)
+  // Unpipe can drop us out of flowing mode
+  this.connection.stream.resume()
 }
 
 

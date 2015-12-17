@@ -8,7 +8,6 @@ var util = require('util')
 var CopyStreamQuery = function(text, options) {
   Transform.call(this, options)
   this.text = text
-  this._listeners = {}
   this._copyOutResponse = null
   this.rowCount = 0
 }
@@ -20,11 +19,7 @@ var eventTypes = ['close', 'data', 'end', 'error']
 CopyStreamQuery.prototype.submit = function(connection) {
   connection.query(this.text)
   this.connection = connection
-  var self = this
-  eventTypes.forEach(function(type) {
-    self._listeners[type] = connection.stream.listeners(type)
-    connection.stream.removeAllListeners(type)
-  })
+  this.connection.removeAllListeners('copyData')
   connection.stream.pipe(this)
 }
 
@@ -36,15 +31,11 @@ var code = {
 }
 
 CopyStreamQuery.prototype._detach = function() {
-  this.connection.stream.unpipe()
-  var self = this
-  eventTypes.forEach(function(type) {
-    self.connection.stream.removeAllListeners(type)
-    self._listeners[type].forEach(function(listener) {
-      self.connection.stream.on(type, listener)
-    })
-  })
+  this.connection.stream.unpipe(this)
+  // Unpipe can drop us out of flowing mode
+  this.connection.stream.resume()
 }
+
 
 CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   var offset = 0
@@ -55,7 +46,6 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
     this._copyOutResponse = true
     if(chunk[0] == code.E) {
       this._detach()
-      this.connection.stream.unshift(chunk)
       this.push(null)
       return cb();
     }
@@ -71,11 +61,6 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
     //complete or error
     if(messageCode == code.c || messageCode == code.E) {
       this._detach()
-      if (messageCode == code.c) {
-        this.connection.stream.unshift(chunk.slice(offset + 5))
-      } else {
-        this.connection.stream.unshift(chunk.slice(offset))
-      }
       this.push(null)
       return cb();
     }
@@ -106,6 +91,9 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
 
 CopyStreamQuery.prototype.handleError = function(e) {
   this.emit('error', e)
+}
+
+CopyStreamQuery.prototype.handleCopyData = function(chunk) {
 }
 
 CopyStreamQuery.prototype.handleCommandComplete = function() {

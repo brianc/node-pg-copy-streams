@@ -1,6 +1,6 @@
 ## pg-copy-streams
 
-[![Build Status](https://travis-ci.org/brianc/node-pg-copy-streams.svg)](https://travis-ci.org/brianc/node-pg-copy-streams)
+[![Build Status](https://travis-ci.org/ebiven/node-pg-copy-streams.svg?branch=master)](https://travis-ci.org/ebiven/node-pg-copy-streams)
 
 COPY FROM / COPY TO for node-postgres.  Stream from one database to another, and stuff.
 
@@ -20,7 +20,7 @@ If you're not familiar with the feature (I wasn't either) you can read this for 
 ### pipe from a table to stdout
 
 ```js
-var pg = require('pg');
+var pg     = require('pg');
 var copyTo = require('pg-copy-streams').to;
 
 pg.connect(function(err, client, done) {
@@ -34,15 +34,17 @@ pg.connect(function(err, client, done) {
 ### pipe from a file to table
 
 ```js
-var fs = require('fs');
-var pg = require('pg');
+var fs       = require('fs');
+var pg       = require('pg');
 var copyFrom = require('pg-copy-streams').from;
 
 pg.connect(function(err, client, done) {
   var stream = client.query(copyFrom('COPY my_table FROM STDIN'));
-  var fileStream = fs.createReadStream('some_file.tdv')
+  stream.on('end', done);
+  stream.on('error', done);
+  var fileStream = fs.createReadStream('some_file.tdv');
   fileStream.on('error', done);
-  fileStream.pipe(stream).on('finish', done).on('error', done);
+  fileStream.pipe(stream);
 });
 ```
 

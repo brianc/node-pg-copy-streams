@@ -2,9 +2,10 @@
   "name": "pg-copy-streams",
   "version": "0.3.0",
   "description": "Low-Level COPY TO and COPY FROM streams for PostgreSQL in JavaScript using",
-  "main": "index.js",
+  "main": "src/index.js",
   "scripts": {
-    "test": "node test"
+    "test": "./node_modules/mocha/bin/mocha --compilers coffee:coffee-script/register",
+    "lint": "./node_modules/coffeelint/bin/coffeelint **/*.coffee"
   },
   "repository": {
     "type": "git",
@@ -18,16 +19,26 @@
     "stream"
   ],
   "author": "Brian M. Carlson",
+  "contributors": [{
+    "name": "Eric Biven",
+    "email": "eric@biven.us"
+  }],
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/brianc/node-pg-copy-streams/issues"
   },
   "devDependencies": {
-    "pg.js": "~2.8.1",
-    "concat-stream": "~1.1.0",
-    "gonna": "0.0.0",
-    "lodash": "~2.2.1",
-    "heroku-env": "~0.1.1",
-    "async": "~0.2.10"
+    "async": "~0.2.10",
+    "chai": "^2.3.0",
+    "coffeelint": "^1.10.1",
+    "concat-stream": "^1.4.8",
+    "lodash": "^3.9.3",
+    "mocha": "^2.2.5",
+    "pg": "^4.3.0",
+    "sinon": "^1.14.1",
+    "sinon-chai": "^2.7.0"
+  },
+  "dependencies": {
+    "coffee-script": "^1.9.3"
   }
 }

@@ -30,6 +30,9 @@ describe 'copy to', ->
     nData  = client.connection.stream.listeners('data').length
     nEnd   = client.connection.stream.listeners('end').length
     nError = client.connection.stream.listeners('error').length
+    if client.connection.ssl
+      # original stream w/ close listener is wrapped in tls stream
+      nClose -= 1
 
     txt = "COPY (SELECT 10) TO STDOUT"
 
@@ -70,6 +73,16 @@ describe 'copy to', ->
       expect(err).to.not.be.null
       client.end()
       cancelClient.end()
+      done()
+
+  it 'should pass back error from bad query', (done)->
+    client       = getClient()
+    txt = 'copy (select a_column from table_doesnt_exist) to STDOUT'
+    stream = client.query copyTo txt
+    stream.on 'data', ()->
+    stream.on 'error', (err)->
+      expect(err).to.not.be.null
+      expect(err.message).to.equal 'relation "table_doesnt_exist" does not exist'
       done()
 
   it 'should deal with really large messages', (done) ->

@@ -58,7 +58,11 @@ module.exports = class CopyToQueryStream extends Transform
       if @firstPass
         @firstPass = false
         if code isnt codes.copyOutResponse
-          @emit 'error', new Error "First message was not a copy out response"
+          if code is codes.error
+            error = this.connection.parseE message
+            @emit 'error', error
+          else
+            @emit 'error', new Error "First message was not a copy out response"
           return cb()
 
         continue

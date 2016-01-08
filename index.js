@@ -61,7 +61,7 @@ CopyStreamQuery.prototype.handleCommandComplete = function(msg) {
   // Parse affected row count as in
   // https://github.com/brianc/node-postgres/blob/35e5567f86774f808c2a8518dd312b8aa3586693/lib/result.js#L37
   var match = /COPY (\d+)/.exec((msg || {}).text)
-  if (match[1]) {
+  if (match) {
     this.rowCount = parseInt(match[1], 10)
   }
 

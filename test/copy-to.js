@@ -20,7 +20,7 @@ var testConstruction = function() {
   assert.equal(stream._readableState.highWaterMark, 10, 'Client should have been set with a correct highWaterMark.')
 }
 
-//testConstruction()
+testConstruction()
 
 var testRange = function(top) {
   var fromClient = client()
@@ -74,4 +74,4 @@ var testInternalPostgresError = function() {
   })
 }
 
-//testInternalPostgresError()
+testInternalPostgresError()

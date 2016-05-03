@@ -1,5 +1,4 @@
 var CopyToQueryStream = require('./copy-to')
-
 module.exports = {
   to: function(txt, options) {
     return new CopyToQueryStream(txt, options)

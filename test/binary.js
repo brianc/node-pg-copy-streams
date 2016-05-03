@@ -4,7 +4,7 @@ var gonna = require('gonna')
 var async = require('async')
 var concat = require('concat-stream')
 var _ = require('lodash')
-var pg = require('pg.js')
+var pg = require('pg')
 
 var from = require('../').from
 var to = require('../').to

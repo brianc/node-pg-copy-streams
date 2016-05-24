@@ -30,10 +30,6 @@ var testRange = function(top) {
 
   var txt = 'COPY numbers FROM STDIN'
   var stream = fromClient.query(copy(txt))
-  var rowEmitCount = 0
-  stream.on('row', function() {
-    rowEmitCount++
-  })
   for(var i = 0; i < top; i++) {
     stream.write(Buffer('' + i + '\t' + i*10 + '\n'))
   }

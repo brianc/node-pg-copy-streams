@@ -39,7 +39,6 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   lenBuffer.writeUInt32BE(chunk.length + 4, 0)
   this.push(lenBuffer)
   this.push(chunk)
-  this.rowCount++
   cb()
 }
 
@@ -58,7 +57,14 @@ CopyStreamQuery.prototype.handleCopyInResponse = function(connection) {
   this.pipe(connection.stream)
 }
 
-CopyStreamQuery.prototype.handleCommandComplete = function() {
+CopyStreamQuery.prototype.handleCommandComplete = function(msg) {
+  // Parse affected row count as in
+  // https://github.com/brianc/node-postgres/blob/35e5567f86774f808c2a8518dd312b8aa3586693/lib/result.js#L37
+  var match = /COPY (\d+)/.exec((msg || {}).text)
+  if (match) {
+    this.rowCount = parseInt(match[1], 10)
+  }
+
   this.unpipe()
   this.emit('end')
 }

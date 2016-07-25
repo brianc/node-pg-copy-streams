@@ -9,7 +9,7 @@ var code = require('./message-formats')
 var CopyStreamQuery = function(text, options) {
   Transform.call(this, options)
   this.text = text
-  this._copyOutResponse = null
+  this._gotCopyOutResponse = false
   this.rowCount = 0
 }
 
@@ -30,50 +30,69 @@ CopyStreamQuery.prototype._detach = function() {
   this.connection.stream.resume()
 }
 
-
 CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   var offset = 0
+  var Byte1Len = 1;
+  var Int32Len = 4;
   if(this._remainder && chunk) {
     chunk = Buffer.concat([this._remainder, chunk])
   }
-  if(!this._copyOutResponse) {
-    this._copyOutResponse = true
-    if(chunk[0] == code.ErrorResponse) {
-      this._detach()
-      this.push(null)
-      return cb();
-    }
-    if(chunk[0] != code.CopyOutResponse) {
-      this.emit('error', new Error('Expected CopyOutResponse code (H)'))
-    }
-    var length = chunk.readUInt32BE(1)
-    offset = 1
-    offset += length
-  }
-  while((chunk.length - offset) > 5) {
+
+  var length;
+  var messageCode;
+  var needPush = false;
+
+  while((chunk.length - offset) > (Byte1Len + Int32Len)) {
     var messageCode = chunk[offset]
-    //complete or error
-    if(messageCode == code.CopyDone || messageCode == code.ErrorResponse) {
-      this._detach()
-      this.push(null)
-      return cb();
+
+    //console.log(c, w, offset, 'PostgreSQL message ' + String.fromCharCode(messageCode))
+    switch(messageCode) {
+
+      // detect COPY start
+      case code.CopyOutResponse:
+        if (!this._gotCopyOutResponse) {
+          this._gotCopyOutResponse = true
+        } else {
+          this.emit('error', new Error('Unexpected CopyOutResponse message (H)'))
+        }
+        break;
+
+      // meaningful row
+      case code.CopyData:
+        needPush = true;
+        break;
+
+      // standard interspersed messages. discard
+      case code.ParameterStatus:
+      case code.NoticeResponse:
+      case code.NotificationResponse:
+        break;
+  
+      case code.ErrorResponse:
+      case code.CopyDone:
+        this._detach()
+        this.push(null)
+        return cb();
+        break;
+      default:
+        this.emit('error', new Error('Unexpected PostgreSQL message ' + String.fromCharCode(messageCode)))
     }
-    //something bad happened
-    if(messageCode != code.CopyData) {
-      return this.emit('error', new Error('Expected CopyData code (d)'))
-    }
-    var length = chunk.readUInt32BE(offset + 1) - 4 //subtract length of UInt32
-    //can we read the next row?
-    if(chunk.length > (offset + length + 5)) {
-      offset += 5
-      var slice = chunk.slice(offset, offset + length)
-      offset += length
-      this.push(slice)
-      this.rowCount++
+
+    length = chunk.readUInt32BE(offset+Byte1Len)
+    if(chunk.length > (offset + Byte1Len + length)) {
+      offset += Byte1Len + Int32Len
+      if (needPush) {
+        var row = chunk.slice(offset, offset + length - Int32Len)
+        this.rowCount++
+        this.push(row)
+      }
+      offset += (length - Int32Len)
     } else {
+      // we need more chunks for a complete message
       break;
     }
   }
+
   if(chunk.length - offset) {
     var slice = chunk.slice(offset)
     this._remainder = slice

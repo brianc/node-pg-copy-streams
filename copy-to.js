@@ -33,24 +33,25 @@ CopyStreamQuery.prototype._detach = function() {
 
 CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   var offset = 0
+  var Byte1Len = 1;
+  var Int32Len = 4;
   if(this._remainder && chunk) {
     chunk = Buffer.concat([this._remainder, chunk])
   }
   if(!this._copyOutResponse) {
     this._copyOutResponse = true
-    if(chunk[0] == code.ErrorResponse) {
+    if(chunk[offset] == code.ErrorResponse) {
       this._detach()
       this.push(null)
       return cb();
     }
-    if(chunk[0] != code.CopyOutResponse) {
+    if(chunk[offset] != code.CopyOutResponse) {
       this.emit('error', new Error('Expected CopyOutResponse code (H)'))
     }
-    var length = chunk.readUInt32BE(1)
-    offset = 1
-    offset += length
+    var length = chunk.readUInt32BE(offset+Byte1Len)
+    offset += Byte1Len + length
   }
-  while((chunk.length - offset) > 5) {
+  while((chunk.length - offset) > (Byte1Len + Int32Len)) {
     var messageCode = chunk[offset]
     //complete or error
     if(messageCode == code.CopyDone || messageCode == code.ErrorResponse) {
@@ -62,10 +63,10 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
     if(messageCode != code.CopyData) {
       return this.emit('error', new Error('Expected CopyData code (d)'))
     }
-    var length = chunk.readUInt32BE(offset + 1) - 4 //subtract length of UInt32
+    var length = chunk.readUInt32BE(offset + Byte1Len) - Int32Len
     //can we read the next row?
-    if(chunk.length > (offset + length + 5)) {
-      offset += 5
+    if(chunk.length > (offset + Byte1Len + Int32Len + length)) {
+      offset += Byte1Len + Int32Len
       var slice = chunk.slice(offset, offset + length)
       offset += length
       this.push(slice)

@@ -4,6 +4,7 @@ module.exports = function(txt, options) {
 
 var Transform = require('stream').Transform
 var util = require('util')
+var code = require('./message-formats')
 
 var CopyStreamQuery = function(text, options) {
   Transform.call(this, options)
@@ -21,13 +22,6 @@ CopyStreamQuery.prototype.submit = function(connection) {
   this.connection = connection
   this.connection.removeAllListeners('copyData')
   connection.stream.pipe(this)
-}
-
-var code = {
-  E: 69, //Error
-  H: 72, //CopyOutResponse
-  d: 0x64, //CopyData
-  c: 0x63 //CopyDone
 }
 
 CopyStreamQuery.prototype._detach = function() {
@@ -50,7 +44,7 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
       return cb();
     }
     if(chunk[0] != code.H) {
-      this.emit('error', new Error('Expected copy out response'))
+      this.emit('error', new Error('Expected copyOutResponse code (H)'))
     }
     var length = chunk.readUInt32BE(1)
     offset = 1
@@ -66,7 +60,7 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
     }
     //something bad happened
     if(messageCode != code.d) {
-      return this.emit('error', new Error('expected "d" (copydata message)'))
+      return this.emit('error', new Error('Expected copyData code (d)'))
     }
     var length = chunk.readUInt32BE(offset + 1) - 4 //subtract length of UInt32
     //can we read the next row?

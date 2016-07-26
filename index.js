@@ -45,8 +45,7 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
 CopyStreamQuery.prototype._flush = function(cb) {
   var finBuffer = Buffer([code.c, 0, 0, 0, 4])
   this.push(finBuffer)
-  //never call this callback, do not close underlying stream
-  //cb()
+  cb()
 }
 
 CopyStreamQuery.prototype.handleError = function(e) {
@@ -54,7 +53,7 @@ CopyStreamQuery.prototype.handleError = function(e) {
 }
 
 CopyStreamQuery.prototype.handleCopyInResponse = function(connection) {
-  this.pipe(connection.stream)
+  this.pipe(connection.stream, { end: false })
 }
 
 CopyStreamQuery.prototype.handleCommandComplete = function(msg) {

@@ -10,6 +10,7 @@ module.exports = {
 
 var Transform = require('stream').Transform
 var util = require('util')
+var code = require('./message-formats')
 
 var CopyStreamQuery = function(text, options) {
   Transform.call(this, options)
@@ -26,13 +27,8 @@ CopyStreamQuery.prototype.submit = function(connection) {
   connection.query(this.text)
 }
 
-var code = {
-  H: 72, //CopyOutResponse
-  d: 0x64, //CopyData
-  c: 0x63 //CopyDone
-}
 
-var copyDataBuffer = Buffer([code.d])
+var copyDataBuffer = Buffer([code.CopyData])
 CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   this.push(copyDataBuffer)
   var lenBuffer = Buffer(4)
@@ -43,7 +39,7 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
 }
 
 CopyStreamQuery.prototype._flush = function(cb) {
-  var finBuffer = Buffer([code.c, 0, 0, 0, 4])
+  var finBuffer = Buffer([code.CopyDone, 0, 0, 0, 4])
   this.push(finBuffer)
   cb()
 }

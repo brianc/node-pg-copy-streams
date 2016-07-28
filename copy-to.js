@@ -9,7 +9,7 @@ var code = require('./message-formats')
 var CopyStreamQuery = function(text, options) {
   Transform.call(this, options)
   this.text = text
-  this._copyOutResponse = null
+  this._gotCopyOutResponse = false
   this.rowCount = 0
 }
 
@@ -36,8 +36,8 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   if(this._remainder && chunk) {
     chunk = Buffer.concat([this._remainder, chunk])
   }
-  if(!this._copyOutResponse) {
-    this._copyOutResponse = true
+  if(!this._gotCopyOutResponse) {
+    this._gotCopyOutResponse = true
     if(chunk[0] == code.ErrorResponse) {
       this._detach()
       this.push(null)
@@ -52,24 +52,29 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   }
   while((chunk.length - offset) > 5) {
     var messageCode = chunk[offset]
-    //complete or error
+    //early bail out of copy-out operation
     if(messageCode == code.CopyDone || messageCode == code.ErrorResponse) {
       this._detach()
       this.push(null)
       return cb();
     }
-    //something bad happened
-    if(messageCode != code.CopyData) {
-      return this.emit('error', new Error('Expected CopyData code (d)'))
-    }
-    var length = chunk.readUInt32BE(offset + 1) - 4 //subtract length of UInt32
-    //can we read the next row?
+    //we can handle the message only when no more chunks are needed
+    var length = chunk.readUInt32BE(offset + 1) - 4
     if(chunk.length > (offset + length + 5)) {
       offset += 5
-      var slice = chunk.slice(offset, offset + length)
+      if (messageCode === code.CopyData) {
+        // note that in binary mode,
+        // - the first row begins with the header
+        // - the last row finishes with the trailer
+        var row = chunk.slice(offset, offset + length)
+        this.rowCount++;
+        this.push(row);
+      } else if ([code.NotificationResponse,
+                  code.NoticeResponse,
+                  code.ParameterStatus].indexOf(messageCode) === -1) {
+          return this.emit('error', new Error('Unexpected message interspersed between CopyData messages'))
+      }
       offset += length
-      this.push(slice)
-      this.rowCount++
     } else {
       break;
     }

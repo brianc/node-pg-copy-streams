@@ -73,5 +73,37 @@ var testInternalPostgresError = function() {
     queryClient.end()
   })
 }
-
 testInternalPostgresError()
+
+var testNoticeResponse = function() {
+  // we use a special trick to generate a warning
+  // on the copy stream.
+  var queryClient = client()
+  var set = '';
+  set += 'SET SESSION client_min_messages = WARNING;'
+  set += 'SET SESSION standard_conforming_strings = off;'
+  set += 'SET SESSION escape_string_warning = on;'
+  queryClient.query(set, function(err, res) {
+    assert.equal(err, null, 'testNoticeResponse - could not SET parameters')
+    var runStream = function(callback) {
+      var txt = "COPY (SELECT '\\\n') TO STDOUT"
+      var stream = queryClient.query(copy(txt))
+      stream.on('data', function(data) {
+      })
+      stream.on('error', callback)
+     
+      // make sure stream is pulled from 
+      stream.pipe(concat(callback.bind(null,null)))
+    }
+
+    runStream(function(err) {
+      assert.equal(err, null, err)
+      queryClient.end()
+    })
+
+  })
+}
+
+testNoticeResponse();
+
+

@@ -7,6 +7,7 @@ var concat = require('concat-stream')
 var pg = require('pg')
 
 var copy = require('../').to
+var code = require('../message-formats')
 
 var client = function() {
   var client = new pg.Client()
@@ -21,6 +22,18 @@ var testConstruction = function() {
 }
 
 testConstruction()
+
+var testComparators = function() {
+  var copy1 = copy();
+  copy1.pipe(concat(function(buf) {
+    assert(copy1._gotCopyOutResponse, 'should have received CopyOutResponse')
+    assert(!copy1._remainder, 'Message with no additional data (len=Int4Len+0) should not leave a remainder')
+  }))
+  copy1.end(new Buffer([code.CopyOutResponse, 0x00, 0x00, 0x00, 0x04])); 
+
+
+}
+testComparators();
 
 var testRange = function(top) {
   var fromClient = client()

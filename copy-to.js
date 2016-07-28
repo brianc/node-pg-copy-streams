@@ -42,10 +42,10 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   var messageCode;
   var needPush = false;
 
-  while((chunk.length - offset) > (Byte1Len + Int32Len)) {
+  while((chunk.length - offset) >= (Byte1Len + Int32Len)) {
     var messageCode = chunk[offset]
 
-    //console.log(c, w, offset, 'PostgreSQL message ' + String.fromCharCode(messageCode))
+    //console.log('PostgreSQL message ' + String.fromCharCode(messageCode))
     switch(messageCode) {
 
       // detect COPY start
@@ -79,7 +79,7 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
     }
 
     length = chunk.readUInt32BE(offset+Byte1Len)
-    if(chunk.length > (offset + Byte1Len + length)) {
+    if(chunk.length >= (offset + Byte1Len + length)) {
       offset += Byte1Len + Int32Len
       if (needPush) {
         var row = chunk.slice(offset, offset + length - Int32Len)

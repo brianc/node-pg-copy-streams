@@ -39,6 +39,7 @@ var testRange = function(top) {
     fromClient.query('SELECT COUNT(*) FROM numbers', function(err, res) {
       assert.ifError(err)
       assert.equal(res.rows[0].count, top, 'expected ' + top + ' rows but got ' + res.rows[0].count)
+      assert.equal(stream.rowCount, top, 'expected ' + top + ' rows but db count is ' + stream.rowCount)
       //console.log('found ', res.rows.length, 'rows')
       countDone()
       var firstRowDone = gonna('have correct result')
@@ -54,3 +55,19 @@ var testRange = function(top) {
 }
 
 testRange(1000)
+
+var testSingleEnd = function() {
+  var fromClient = client()
+  fromClient.query('CREATE TEMP TABLE numbers(num int)')
+  var txt = 'COPY numbers FROM STDIN';
+  var stream = fromClient.query(copy(txt))
+  var count = 0;
+  stream.on('end', function() {
+    count++;
+    assert(count==1, '`end` Event was triggered ' + count + ' times');
+    if (count == 1) fromClient.end();
+  })
+  stream.end(Buffer('1\n'))
+    
+}
+testSingleEnd()

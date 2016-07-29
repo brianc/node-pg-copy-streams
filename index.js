@@ -62,8 +62,9 @@ CopyStreamQuery.prototype.handleCommandComplete = function(msg) {
     this.rowCount = parseInt(match[1], 10)
   }
 
-  this.unpipe()
-  this.emit('end')
+  // unpipe from connection
+  this.unpipe(this.connection)
+  this.connection = null
 }
 
 CopyStreamQuery.prototype.handleReadyForQuery = function() {

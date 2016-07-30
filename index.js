@@ -43,7 +43,7 @@ CopyStreamQuery.prototype._flush = function(cb) {
   var Int32Len = 4;
   var finBuffer = Buffer([code.CopyDone, 0, 0, 0, Int32Len])
   this.push(finBuffer)
-  cb()
+  this.cb_flush = cb
 }
 
 CopyStreamQuery.prototype.handleError = function(e) {
@@ -61,6 +61,10 @@ CopyStreamQuery.prototype.handleCommandComplete = function(msg) {
   if (match) {
     this.rowCount = parseInt(match[1], 10)
   }
+
+  // we delay the _flush cb so that the 'end' event is
+  // triggered after CommandComplete
+  this.cb_flush()
 
   // unpipe from connection
   this.unpipe(this.connection)

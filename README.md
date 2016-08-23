@@ -42,9 +42,14 @@ pg.connect(function(err, client, done) {
   var stream = client.query(copyFrom('COPY my_table FROM STDIN'));
   var fileStream = fs.createReadStream('some_file.tsv')
   fileStream.on('error', done);
-  fileStream.pipe(stream).on('finish', done).on('error', done);
+  stream.on('error', done);
+  stream.on('end', done);
+  fileStream.pipe(stream);
 });
 ```
+
+*Important*: Even if `pg-copy-streams.from` is used as a Writable (via `pipe`), you should not listen for the 'finish' event and expect that the COPY command has already been correctly acknowledged by the database. Internally, a duplex stream is used to pipe the data into the database connection and the COPY command should be considered complete only when the 'end' event is triggered.
+
 
 ## install
 

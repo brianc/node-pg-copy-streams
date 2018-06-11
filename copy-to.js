@@ -44,12 +44,10 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
 
   var buffer = Buffer.alloc(chunk.length);
   var buffer_offset = 0;
-  var buffer_sent = false;
 
   this.pushBufferIfneeded = function() {
-    if(needPush && !buffer_sent && buffer_offset > 0) {
+    if (needPush && buffer_offset > 0) {
       this.push(buffer.slice(0, buffer_offset))
-      buffer_sent = true;
       buffer_offset = 0;
     }
   }

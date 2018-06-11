@@ -46,6 +46,14 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   var buffer_offset = 0;
   var buffer_sent = false;
 
+  this.pushBufferIfneeded = function() {
+    if(needPush && !buffer_sent && buffer_offset > 0) {
+      this.push(buffer.slice(0, buffer_offset))
+      buffer_sent = true;
+      buffer_offset = 0;
+    }
+  }
+
   while((chunk.length - offset) >= (Byte1Len + Int32Len)) {
     var messageCode = chunk[offset]
 
@@ -74,11 +82,7 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   
       case code.ErrorResponse:
       case code.CopyDone:
-        if(needPush && !buffer_sent && buffer_offset > 0) {
-          this.push(buffer.slice(0, buffer_offset))
-          buffer_sent = true;
-          buffer_offset = 0;
-        }
+        this.pushBufferIfneeded();
         this._detach()
         this.push(null)
         return cb();
@@ -103,11 +107,7 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
     }
   }
 
-  if(needPush && !buffer_sent && buffer_offset > 0) {
-    this.push(buffer.slice(0, buffer_offset))
-    buffer_sent = true;
-    buffer_offset = 0;
-  }
+  this.pushBufferIfneeded();
 
   if(chunk.length - offset) {
     var slice = chunk.slice(offset)

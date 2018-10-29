@@ -2,18 +2,18 @@ module.exports = function(txt, options) {
     return new CopyStreamQuery(txt, options)
   }
   
-  var Transform = require('stream').Transform
+  var Readable = require('stream').Readable
   var util = require('util')
   var code = require('./message-formats')
   
   var CopyStreamQuery = function(text, options) {
-    Transform.call(this, options)
+    Readable.call(this, options)
     this.text = text
     this._gotCopyOutResponse = false
     this.rowCount = 0
   }
   
-  util.inherits(CopyStreamQuery, Transform)
+  util.inherits(CopyStreamQuery, Readable)
   
   var eventTypes = ['close', 'data', 'end', 'error']
   
@@ -23,15 +23,13 @@ module.exports = function(txt, options) {
     this.connection.removeAllListeners('copyData')
     this.listeners = connection.stream.listeners('data');
     connection.stream.removeAllListeners('data');
-    //connection.stream.pipe(this)
     var self = this;
     connection.stream.on('data', function(chunk) {
-      self._transform(chunk,'',function(){});
+      self._process(chunk);
     });
   }
   
   CopyStreamQuery.prototype._detach = function() {
-    // this.connection.stream.unpipe(this)
     this.connection.stream.removeAllListeners('data');
     // Unpipe can drop us out of flowing mode
     this.connection.stream.resume()
@@ -39,8 +37,10 @@ module.exports = function(txt, options) {
       this.connection.stream.addListener('data',this.listeners[i]);
     }
   }
-  
-  CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
+  CopyStreamQuery.prototype._read = function() {
+  }
+
+  CopyStreamQuery.prototype._process = function(chunk) {
     var offset = 0
     var Byte1Len = 1;
     var Int32Len = 4;
@@ -85,7 +85,7 @@ module.exports = function(txt, options) {
             this.connection.stream.emit('data', chunk.slice(offset));
           }
           this.push(null)
-          return cb();
+          return;
           break;
         default:
           this.emit('error', new Error('Unexpected PostgreSQL message ' + String.fromCharCode(messageCode)))
@@ -112,7 +112,6 @@ module.exports = function(txt, options) {
     } else {
       this._remainder = false
     }
-    cb()
   }
   
   CopyStreamQuery.prototype.handleError = function(e) {
@@ -123,7 +122,7 @@ module.exports = function(txt, options) {
   }
   
   CopyStreamQuery.prototype.handleCommandComplete = function() {
-  this.push(null);
+  
   }
   
   CopyStreamQuery.prototype.handleReadyForQuery = function() {

@@ -31,7 +31,7 @@ var testComparators = function() {
     assert(copy1._gotCopyOutResponse, 'should have received CopyOutResponse')
     assert(!copy1._remainder, 'Message with no additional data (len=Int4Len+0) should not leave a remainder')
   }))
-  copy1.end(new Buffer([code.CopyOutResponse, 0x00, 0x00, 0x00, 0x04])); 
+  copy1.end(new Buffer.from([code.CopyOutResponse, 0x00, 0x00, 0x00, 0x04])); 
 
 
 }

@@ -33,7 +33,7 @@ var testRange = function(top) {
   var txt = 'COPY numbers FROM STDIN'
   var stream = fromClient.query(copy(txt))
   for(var i = 0; i < top; i++) {
-    stream.write(Buffer('' + i + '\t' + i*10 + '\n'))
+    stream.write(Buffer.from('' + i + '\t' + i*10 + '\n'))
   }
   stream.end()
   var countDone = gonna('have correct count')
@@ -69,7 +69,7 @@ var testSingleEnd = function() {
     assert(count==1, '`end` Event was triggered ' + count + ' times');
     if (count == 1) fromClient.end();
   })
-  stream.end(Buffer('1\n'))
+  stream.end(Buffer.from('1\n'))
     
 }
 testSingleEnd()

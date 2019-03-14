@@ -81,7 +81,10 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
 ## changelog
 
-### version 2.x.x
+### version 2.x - published YYYY-MM-DD
+
+
+### version 2.0.0 - published 2019-03-14
 
 This version's major change is a modification in the COPY TO implementation. In the previous version, when a chunk was received from the database, it was analyzed and every row contained within that chunk was pushed individually down the stream pipeline. Small rows could lead to a "one chunk" / "thousands of row pushed" performance issue in node. Thanks to @rafatower & CartoDB for the patch.
 This is considered to be a major change since some people could be relying on the fact that each outgoing chunk is an individual row.

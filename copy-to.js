@@ -1,3 +1,5 @@
+'use strict';
+
 module.exports = function(txt, options) {
   return new CopyStreamQuery(txt, options)
 }

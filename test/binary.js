@@ -1,3 +1,5 @@
+'use strict';
+
 var assert = require('assert')
 var gonna = require('gonna')
 
@@ -19,7 +21,7 @@ var testBinaryCopy = function() {
   var fromClient = client()
   var toClient = client()
 
-  queries = [
+  var queries = [
     'DROP TABLE IF EXISTS data',
     'CREATE TABLE IF NOT EXISTS data (num BIGINT, word TEXT)',
     'INSERT INTO data (num, word) VALUES (1, \'hello\'), (2, \'other thing\'), (3, \'goodbye\')',
@@ -33,7 +35,7 @@ var testBinaryCopy = function() {
     var fromStream = fromClient.query(to('COPY (SELECT * FROM data) TO STDOUT BINARY'))
     var toStream = toClient.query(from('COPY data_copy FROM STDIN BINARY'))
 
-    runStream = function(callback) {
+    var runStream = function(callback) {
       fromStream.on('error', callback)
       toStream.on('error', callback)
       toStream.on('finish', callback)

@@ -1,3 +1,5 @@
+'use strict';
+
 var CopyToQueryStream = require('./copy-to')
 module.exports = {
   to: function(txt, options) {

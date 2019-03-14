@@ -79,6 +79,20 @@ Generally how I work is if you submit a few pull requests and you're interested 
 
 Since this isn't a module with tons of installs and dependent modules I hope we can work together on this to iterate faster here and make something really useful.
 
+## changelog
+
+### version 2.x.x
+
+This version's major change is a modification in the COPY TO implementation. In the previous version, when a chunk was received from the database, it was analyzed and every row contained within that chunk was pushed individually down the stream pipeline. Small rows could lead to a "one chunk" / "thousands of row pushed" performance issue in node. Thanks to @rafatower & CartoDB for the patch.
+This is considered to be a major change since some people could be relying on the fact that each outgoing chunk is an individual row.
+
+Other changes in this version
+ * Use Strict
+ * Travis deprecation of old node version (0.12, 0.4). Support LTS 6, 8, 10 and Current 11
+ * Update dev dependencies (pg, lodash)
+ * Stop using deprecated Buffer constructor
+ * Add package-lock.json
+
 ## license
 
 The MIT License (MIT)

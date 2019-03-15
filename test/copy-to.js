@@ -59,7 +59,6 @@ var testRange = function(top) {
     done()
   });
 }
-
 testRange(10000)
 
 var testInternalPostgresError = function() {
@@ -76,7 +75,7 @@ var testInternalPostgresError = function() {
 
     setTimeout(function() {
       var cancelQuery = "SELECT pg_cancel_backend(pid) FROM pg_stat_activity WHERE query ~ 'pg_sleep' AND NOT query ~ 'pg_cancel_backend'"
-      cancelClient.query(cancelQuery)
+      cancelClient.query(cancelQuery, function() { cancelClient.end() })
     }, 50)
   }
 
@@ -84,7 +83,6 @@ var testInternalPostgresError = function() {
     assert.notEqual(err, null)
     var expectedMessage = 'canceling statement due to user request'
     assert.notEqual(err.toString().indexOf(expectedMessage), -1, 'Error message should mention reason for query failure.')
-    cancelClient.end()
     queryClient.end()
   })
 }
@@ -118,7 +116,6 @@ var testNoticeResponse = function() {
 
   })
 }
-
 testNoticeResponse();
 
 

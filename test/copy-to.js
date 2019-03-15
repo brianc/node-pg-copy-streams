@@ -22,7 +22,6 @@ var testConstruction = function() {
   var stream = copy(txt, {highWaterMark: 10})
   assert.equal(stream._readableState.highWaterMark, 10, 'Client should have been set with a correct highWaterMark.')
 }
-
 testConstruction()
 
 var testComparators = function() {
@@ -118,4 +117,37 @@ var testNoticeResponse = function() {
 }
 testNoticeResponse();
 
+var testClientReuse = function() {
+  var c = client();
+  var limit = 100000;
+  var countMax = 10;
+  var countA = countMax;
+  var countB = 0;
+  var runStream = function(num, callback) {
+    var sql = "COPY (SELECT * FROM generate_series(0,"+limit+")) TO STDOUT"
+    var stream = c.query(copy(sql))
+    stream.on('error', callback)
+    stream.pipe(concat(function(buf) {
+      var res = buf.toString('utf8');
+      var exp = _.range(0, limit+1).join('\n') + '\n'
+      assert.equal(res, exp, 'clientReuse: sent & received buffer should be equal')
+      countB++;
+      callback();
+    }))
+  }
+  
+  var rs = function(err) {
+    assert.equal(err, null, err)
+    countA--;
+    if (countA) {
+      runStream(countB, rs)
+    } else {
+      assert.equal(countB, countMax, 'clientReuse: there should be countMax queries on the same client')
+      c.end()
+    }
+  };
 
+  runStream(countB, rs);
+
+}
+testClientReuse();

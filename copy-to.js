@@ -47,9 +47,10 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   var buffer = Buffer.alloc(chunk.length);
   var buffer_offset = 0;
 
-  this.pushBufferIfneeded = function() {
+  var self = this;
+  var pushBufferIfneeded = function() {
     if (needPush && buffer_offset > 0) {
-      this.push(buffer.slice(0, buffer_offset))
+      self.push(buffer.slice(0, buffer_offset))
       buffer_offset = 0;
     }
   }
@@ -82,7 +83,7 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
 
       case code.ErrorResponse:
       case code.CopyDone:
-        this.pushBufferIfneeded();
+        pushBufferIfneeded();
         this._detach()
         this.push(null)
         return cb();
@@ -107,7 +108,7 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
     }
   }
 
-  this.pushBufferIfneeded();
+  pushBufferIfneeded();
 
   if(chunk.length - offset) {
     var slice = chunk.slice(offset)

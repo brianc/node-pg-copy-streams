@@ -73,3 +73,32 @@ var testSingleEnd = function() {
     
 }
 testSingleEnd()
+
+var testClientReuse = function() {
+  var fromClient = client()
+  fromClient.query('CREATE TEMP TABLE numbers(num int)')
+  var txt = 'COPY numbers FROM STDIN';
+  var count = 0;
+  var countMax = 2;
+  var card = 100000;
+  var runStream = function() {
+    var stream = fromClient.query(copy(txt))
+    stream.on('end', function() {
+      count++;
+      if (count<countMax) {
+        runStream()
+      } else {
+        fromClient.query('SELECT sum(num) AS s FROM numbers', function(err, res) {
+          var total = countMax * card * (card+1)
+          assert.equal(res.rows[0].s, total, 'copy-from.ClientReuse wrong total')
+          fromClient.end()
+        })
+      }
+    })
+    stream.write(Buffer.from(_.range(0, card+1).join('\n') + '\n'))
+    stream.end(Buffer.from(_.range(0, card+1).join('\n') + '\n'))
+  }
+  runStream();
+}
+testClientReuse()
+

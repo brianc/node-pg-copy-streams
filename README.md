@@ -90,6 +90,7 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
  * Change README to stop using the pg pool singleton (removed after pg 7.0)
  * Do not register copy-to.pushBufferIfNeeded on the instance itself (avoid dangling method on the object)
  * Fix copy-to test wrt intermittent unhandled promise bug
+ * Add tests regarding client re-use
 
 ### version 2.0.0 - published 2019-03-14
 

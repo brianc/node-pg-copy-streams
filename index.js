@@ -30,12 +30,10 @@ CopyStreamQuery.prototype.submit = function(connection) {
 }
 
 
-var copyDataBuffer = Buffer.from([code.CopyData])
 CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   var Int32Len = 4;
-  this.push(copyDataBuffer)
-  var lenBuffer = Buffer.alloc(Int32Len)
-  lenBuffer.writeUInt32BE(chunk.length + Int32Len, 0)
+  var lenBuffer = Buffer.from([code.CopyData, 0, 0, 0, 0])
+  lenBuffer.writeUInt32BE(chunk.length + Int32Len, 1)
   this.push(lenBuffer)
   this.push(chunk)
   cb()

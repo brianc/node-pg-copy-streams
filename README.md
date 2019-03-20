@@ -87,6 +87,8 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
 ### version 2.x - published YYYY-MM-DD
 
+ * Small refactor in copy-from passing from 3 push to 2 push in every chunk transform loop
+
 ### version 2.1.0 - published 2019-03-19
 
  * Change README to stop using the pg pool singleton (removed after pg 7.0)

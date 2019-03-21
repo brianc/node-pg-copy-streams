@@ -109,6 +109,8 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
  * Small refactor in copy-from passing from 3 push to 2 push in every chunk transform loop
  * Add bench/ directory for benchmarks
+ * Add benchmark to compare performance of pg-copy-stream wrt psql during copy-from
+ * Add benchmark to measure memory usage of copy-from
 
 ### version 2.1.0 - published 2019-03-19
 

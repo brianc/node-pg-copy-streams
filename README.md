@@ -70,6 +70,26 @@ Before you set out on this magical piping journey, you _really_ should read this
 Take note of the following warning in the PostgreSQL documentation:
 > COPY stops operation at the first error. This should not lead to problems in the event of a COPY TO, but the target table will already have received earlier rows in a COPY FROM. These rows will not be visible or accessible, but they still occupy disk space. This might amount to a considerable amount of wasted disk space if the failure happened well into a large copy operation. You might wish to invoke VACUUM to recover the wasted space.
 
+## benchmarks
+
+The COPY command is commonly used to move huge sets of data. This can put some pressure on the node.js loop, the amount of CPU or the amount of memory used.
+There is a bench/ directory in the repository where benchmark scripts are stored. If you have performance issues with `pg-copy-stream` do not hesitate to write a new benchmark that highlights your issue. Please avoid to commit huge files (PR won't be accepted) and find other ways to generate huge datasets.
+
+If you have a local instance of postgres on your machine, you can start a benchmark for example with
+
+```sh
+$ cd bench
+$ PGPORT=5432 PGDATABASE=postgres node copy-from.js
+```
+
+## tests
+
+In order to launch the test suite, you need to have a local instance of postgres running on your machine.
+
+```sh
+$ PGPORT=5432 PGDATABASE=postgres make test
+```
+
 ## contributing
 
 Instead of adding a bunch more code to the already bloated [node-postgres](https://github.com/brianc/node-postgres) I am trying to make the internals extensible and work on adding edge-case features as 3rd party modules.
@@ -88,6 +108,7 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 ### version 2.x - published YYYY-MM-DD
 
  * Small refactor in copy-from passing from 3 push to 2 push in every chunk transform loop
+ * Add bench/ directory for benchmarks
 
 ### version 2.1.0 - published 2019-03-19
 

@@ -107,6 +107,8 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
 ### version 2.x - published YYYY-MM-DD
 
+### version 2.2.0 - published YYYY-MM-DD
+
  * Small refactor in copy-from passing from 3 push to 2 push in every chunk transform loop
  * Add bench/ directory for benchmarks
  * Add benchmark to compare performance of pg-copy-stream wrt psql during copy-from

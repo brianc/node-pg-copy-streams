@@ -6,6 +6,7 @@ var gonna = require('gonna')
 var _ = require('lodash')
 var async = require('async')
 var concat = require('concat-stream')
+var Writable = require('stream').Writable;
 var pg = require('pg')
 
 var copy = require('../').to
@@ -151,3 +152,47 @@ var testClientReuse = function() {
 
 }
 testClientReuse();
+
+var testClientFlowingState = function() {
+  var donePiping = gonna('finish piping out')
+  var clientQueryable = gonna('client is still queryable after piping has finished')
+  var c = client();
+
+  // uncomment the code to see pausing and resuming of the connection stream
+
+  //const orig_resume = c.connection.stream.resume;
+  //const orig_pause = c.connection.stream.pause;
+  //
+  //c.connection.stream.resume = function () {
+  //  console.log('resume', new Error().stack);
+  //  orig_resume.apply(this, arguments)
+  //}
+  //
+  //c.connection.stream.pause = function () {
+  //  console.log('pause', new Error().stack);
+  //  orig_pause.apply(this, arguments)
+  //}
+
+  var testConnection = function () {
+    c.query('SELECT 1', function () {
+      clientQueryable()
+      c.end()
+    })
+  }
+
+  var writable = new Writable({
+    write: function(chunk, encoding, cb) {
+      cb()
+    },
+    final: function (cb) {
+      donePiping()
+      cb()
+      setTimeout(testConnection, 100) // test if the connection didn't drop flowing state
+    }
+  })
+
+  var sql = "COPY (SELECT 1) TO STDOUT"
+  var stream = c.query(copy(sql, { highWaterMark: 1 }))
+  stream.pipe(writable)
+}
+testClientFlowingState();

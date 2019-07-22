@@ -183,12 +183,11 @@ var testClientFlowingState = function() {
   var writable = new Writable({
     write: function(chunk, encoding, cb) {
       cb()
-    },
-    final: function (cb) {
-      donePiping()
-      cb()
-      setTimeout(testConnection, 100) // test if the connection didn't drop flowing state
     }
+  })
+  writable.on('finish', function() {
+    donePiping()
+    setTimeout(testConnection, 100) // test if the connection didn't drop flowing state
   })
 
   var sql = "COPY (SELECT 1) TO STDOUT"

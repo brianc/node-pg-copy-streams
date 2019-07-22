@@ -27,9 +27,15 @@ CopyStreamQuery.prototype.submit = function(connection) {
 }
 
 CopyStreamQuery.prototype._detach = function() {
-  this.connection.stream.unpipe(this)
-  // Unpipe can drop us out of flowing mode
-  this.connection.stream.resume()
+  var connectionStream = this.connection.stream
+  connectionStream.unpipe(this)
+
+  // unpipe can pause the stream but also underlying onData event can potentially pause the stream because of hitting
+  // the highWaterMark and pausing the stream, so we resume the stream in the next tick after the underlying onData
+  // event has finished
+  process.nextTick(function () {
+    connectionStream.resume()
+  })
 }
 
 CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {

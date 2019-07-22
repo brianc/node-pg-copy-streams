@@ -107,6 +107,10 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
 ### version 2.x - published YYYY-MM-DD
 
+### version 2.2.2 - published 2019-07-22
+
+ * Bugfix copy-to could pause the client connection, preventing re-use
+
 ### version 2.2.1 - published 2019-07-22
 
  * Bugfix copy-from was not correctly unpiped from the the connection stream

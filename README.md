@@ -107,7 +107,11 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
 ### version 2.x - published YYYY-MM-DD
 
-### version 2.2.0 - published YYYY-MM-DD
+### version 2.2.1 - published 2019-07-22
+
+ * Bugfix copy-from was not correctly unpiped from the the connection stream
+
+### version 2.2.0 - published 2019-03-21
 
  * Small refactor in copy-from passing from 3 push to 2 push in every chunk transform loop
  * Add bench/ directory for benchmarks

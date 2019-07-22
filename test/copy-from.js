@@ -15,6 +15,27 @@ var client = function() {
   return client
 }
 
+var testStreamUnpipe = function() {
+  var fromClient = client()
+  fromClient.query('CREATE TEMP TABLE numbers(num int)')
+
+  var stream = fromClient.query(copy('COPY numbers FROM STDIN'))
+  var unpipeDone = gonna('unpipe the stream')
+  var onEndCalled = false
+  fromClient.connection.stream.on('unpipe', function (src) {
+    assert.equal(src, stream)
+    assert(!onEndCalled)
+    unpipeDone()
+  })
+  stream.on('end', function () {
+    onEndCalled = true
+    fromClient.end()
+  })
+  stream.end(Buffer.from('1\n'))
+}
+
+testStreamUnpipe()
+
 var testConstruction = function() {
   var highWaterMark = 10
   var stream = copy('COPY numbers FROM STDIN', {highWaterMark: 10, objectMode: true})

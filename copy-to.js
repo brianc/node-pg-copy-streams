@@ -92,6 +92,7 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
         pushBufferIfneeded();
         this._detach()
         this.push(null)
+        this.destroy()
         return cb();
         break;
       default:

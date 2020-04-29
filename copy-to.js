@@ -5,14 +5,23 @@ module.exports = function (txt, options) {
 }
 
 var Transform = require('stream').Transform
+var BufferList = require('obuf')
 var util = require('util')
 var code = require('./message-formats')
+
+// decoder states
+const PG_CODE = 0
+const PG_LENGTH = 1
+const PG_MESSAGE = 2
 
 var CopyStreamQuery = function (text, options) {
   Transform.call(this, options)
   this.text = text
-  this._gotCopyOutResponse = false
   this.rowCount = 0
+  this._state = PG_CODE
+  this._buffer = new BufferList()
+  this._unreadMessageContentLength = 0
+  this._copyDataChunks = new BufferList()
 }
 
 util.inherits(CopyStreamQuery, Transform)
@@ -39,88 +48,61 @@ CopyStreamQuery.prototype._detach = function () {
 }
 
 CopyStreamQuery.prototype._transform = function (chunk, enc, cb) {
-  var offset = 0
-  var Byte1Len = 1
-  var Int32Len = 4
-  if (this._remainder && chunk) {
-    chunk = Buffer.concat([this._remainder, chunk])
-  }
+  var done = false
+  this._buffer.push(chunk)
 
-  var length
-  var messageCode
-  var needPush = false
-
-  var buffer = Buffer.alloc(chunk.length)
-  var buffer_offset = 0
-
-  var self = this
-  var pushBufferIfneeded = function () {
-    if (needPush && buffer_offset > 0) {
-      self.push(buffer.slice(0, buffer_offset))
-      buffer_offset = 0
+  while (this._buffer.size > 0) {
+    if (PG_CODE === this._state) {
+      if (!this._buffer.has(1)) break
+      this._code = this._buffer.readUInt8()
+      this._state = PG_LENGTH
     }
-  }
 
-  while (chunk.length - offset >= Byte1Len + Int32Len) {
-    var messageCode = chunk[offset]
+    if (PG_LENGTH === this._state) {
+      if (!this._buffer.has(4)) break
+      this._unreadMessageContentLength = this._buffer.readUInt32BE() - 4
+      this._state = PG_MESSAGE
+    }
 
-    //console.log('PostgreSQL message ' + String.fromCharCode(messageCode))
-    switch (messageCode) {
-      // detect COPY start
-      case code.CopyOutResponse:
-        if (!this._gotCopyOutResponse) {
-          this._gotCopyOutResponse = true
-        } else {
-          this.emit('error', new Error('Unexpected CopyOutResponse message (H)'))
+    if (PG_MESSAGE === this._state) {
+      if (this._unreadMessageContentLength > 0 && this._buffer.size > 0) {
+        let n = Math.min(this._buffer.size, this._unreadMessageContentLength)
+        let copyDataChunk = this._buffer.take(n)
+        this._unreadMessageContentLength -= n
+        if (this._code === code.CopyData) {
+          this._copyDataChunks.push(copyDataChunk)
         }
-        break
-
-      // meaningful row
-      case code.CopyData:
-        needPush = true
-        break
-
-      // standard interspersed messages. discard
-      case code.ParameterStatus:
-      case code.NoticeResponse:
-      case code.NotificationResponse:
-        break
-
-      case code.ErrorResponse:
-      case code.CopyDone:
-        pushBufferIfneeded()
-        this._detach()
-        this.push(null)
-        return cb()
-        break
-      default:
-        this.emit('error', new Error('Unexpected PostgreSQL message ' + String.fromCharCode(messageCode)))
-    }
-
-    length = chunk.readUInt32BE(offset + Byte1Len)
-    if (chunk.length >= offset + Byte1Len + length) {
-      offset += Byte1Len + Int32Len
-      if (needPush) {
-        var row = chunk.slice(offset, offset + length - Int32Len)
-        this.rowCount++
-        row.copy(buffer, buffer_offset)
-        buffer_offset += row.length
       }
-      offset += length - Int32Len
-    } else {
-      // we need more chunks for a complete message
-      break
+
+      if (this._unreadMessageContentLength === 0) {
+        // a full message has been captured
+        switch (this._code) {
+          case code.CopyOutResponse:
+            break
+          case code.CopyDone:
+          case code.ErrorResponse:
+            done = true
+            break
+          case code.CopyData:
+            this.rowCount++
+            break
+        }
+        this._state = PG_CODE
+      }
     }
   }
 
-  pushBufferIfneeded()
-
-  if (chunk.length - offset) {
-    var slice = chunk.slice(offset)
-    this._remainder = slice
-  } else {
-    this._remainder = false
+  // flush data if any data has been captured
+  let len = this._copyDataChunks.size
+  if (len > 0) {
+    this.push(this._copyDataChunks.take(len))
   }
+
+  if (done) {
+    this._detach()
+    this.push(null)
+  }
+
   cb()
 }
 

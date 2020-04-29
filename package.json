@@ -39,5 +39,8 @@
     "arrowParens": "always",
     "trailingComma": "es5",
     "singleQuote": true
+  },
+  "dependencies": {
+    "obuf": "^1.1.2"
   }
 }

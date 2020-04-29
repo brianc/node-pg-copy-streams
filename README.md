@@ -105,7 +105,17 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
 ## changelog
 
-### version 2.x - published YYYY-MM-DD
+### version 3.x - not yet published
+
+This version's major change is a modification in the COPY TO implementation. In the previous versions, a row could be pushed downstream only after the full row was gathered in memory. In many cases, rows are small and this is not an issue. But there are some use cases where rows can grow bigger (think of a row containing a 1MB raw image in a BYTEA field. cf issue #91). In these cases, the library was constantly trying to allocate very big buffers and this could lead to severe performance issues.
+In the new implementation, all the data payload received from a postgres chunk is sent downstream without waiting for full row boundaries.
+
+Some users may in the past have relied on the fact the the copy-to chunk boundaries exactly matched row boundaries. A major difference in the 3.x version is that the module does not offer any guarantee that its chunk boundaries match row boundaries. A row data could (and you have to realize that this will happen) be split across 2 or more chunks depending on the size of the rows and on postgres's own chunking decisions.
+
+As a consequence, when the copy-to stream is piped into a pipeline that does row/CSV parsing, you need to make sure that this pipeline correcly handles rows than span across chunk boundaries. For its tests, this module uses the [csv-parser](https://github.com/mafintosh/csv-parser)  module
+
+ * Add `prettier` configuration following discussion on brianc/node-postgres#2172
+ * Rewrite the copy-to implementation in order to avoid fetching whole rows in memory
 
 ### version 2.2.2 - published 2019-07-22
 

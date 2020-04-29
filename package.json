@@ -30,6 +30,14 @@
     "gonna": "0.0.0",
     "heroku-env": "~0.1.1",
     "lodash": "^4.17.11",
-    "pg": "^7.8.2"
+    "pg": "^7.8.2",
+    "prettier": "^2.0.5"
+  },
+  "prettier": {
+    "semi": false,
+    "printWidth": 120,
+    "arrowParens": "always",
+    "trailingComma": "es5",
+    "singleQuote": true
   }
 }

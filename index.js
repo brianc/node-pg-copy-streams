@@ -1,20 +1,20 @@
-'use strict';
+'use strict'
 
 var CopyToQueryStream = require('./copy-to')
 module.exports = {
-  to: function(txt, options) {
+  to: function (txt, options) {
     return new CopyToQueryStream(txt, options)
   },
   from: function (txt, options) {
     return new CopyStreamQuery(txt, options)
-  }
+  },
 }
 
 var Transform = require('stream').Transform
 var util = require('util')
 var code = require('./message-formats')
 
-var CopyStreamQuery = function(text, options) {
+var CopyStreamQuery = function (text, options) {
   Transform.call(this, options)
   this.text = text
   this._listeners = null
@@ -24,14 +24,13 @@ var CopyStreamQuery = function(text, options) {
 
 util.inherits(CopyStreamQuery, Transform)
 
-CopyStreamQuery.prototype.submit = function(connection) {
+CopyStreamQuery.prototype.submit = function (connection) {
   this.connection = connection
   connection.query(this.text)
 }
 
-
-CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
-  var Int32Len = 4;
+CopyStreamQuery.prototype._transform = function (chunk, enc, cb) {
+  var Int32Len = 4
   var lenBuffer = Buffer.from([code.CopyData, 0, 0, 0, 0])
   lenBuffer.writeUInt32BE(chunk.length + Int32Len, 1)
   this.push(lenBuffer)
@@ -39,22 +38,22 @@ CopyStreamQuery.prototype._transform = function(chunk, enc, cb) {
   cb()
 }
 
-CopyStreamQuery.prototype._flush = function(cb) {
-  var Int32Len = 4;
+CopyStreamQuery.prototype._flush = function (cb) {
+  var Int32Len = 4
   var finBuffer = Buffer.from([code.CopyDone, 0, 0, 0, Int32Len])
   this.push(finBuffer)
   this.cb_flush = cb
 }
 
-CopyStreamQuery.prototype.handleError = function(e) {
+CopyStreamQuery.prototype.handleError = function (e) {
   this.emit('error', e)
 }
 
-CopyStreamQuery.prototype.handleCopyInResponse = function(connection) {
+CopyStreamQuery.prototype.handleCopyInResponse = function (connection) {
   this.pipe(connection.stream, { end: false })
 }
 
-CopyStreamQuery.prototype.handleCommandComplete = function(msg) {
+CopyStreamQuery.prototype.handleCommandComplete = function (msg) {
   // Parse affected row count as in
   // https://github.com/brianc/node-postgres/blob/35e5567f86774f808c2a8518dd312b8aa3586693/lib/result.js#L37
   var match = /COPY (\d+)/.exec((msg || {}).text)
@@ -71,5 +70,4 @@ CopyStreamQuery.prototype.handleCommandComplete = function(msg) {
   this.connection = null
 }
 
-CopyStreamQuery.prototype.handleReadyForQuery = function() {
-}
+CopyStreamQuery.prototype.handleReadyForQuery = function () {}

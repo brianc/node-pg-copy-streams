@@ -200,4 +200,15 @@ describe('copy-to', () => {
       done()
     })
   })
+
+  it('one large row emits multiple chunks', (done) => {
+    const fieldSize = 64 * 1024
+    const sql = `COPY (SELECT repeat('-', ${fieldSize})) TO STDOUT`
+    assertCopyToResult(sql, (err, chunks, result, stream) => {
+      assert.ifError(err)
+      assert(chunks.length > 1)
+      assert.equal(result, `${'-'.repeat(fieldSize)}\n`)
+      done()
+    })
+  })
 })

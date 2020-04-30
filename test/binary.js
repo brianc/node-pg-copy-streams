@@ -1,7 +1,6 @@
 'use strict'
 
 var assert = require('assert')
-var gonna = require('gonna')
 
 var async = require('async')
 var concat = require('concat-stream')

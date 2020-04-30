@@ -1,7 +1,6 @@
 'use strict'
 
 var assert = require('assert')
-var gonna = require('gonna')
 
 var concat = require('concat-stream')
 var _ = require('lodash')
@@ -21,12 +20,10 @@ describe('copy-from', () => {
     fromClient.query('CREATE TEMP TABLE numbers(num int)')
 
     var stream = fromClient.query(copy('COPY numbers FROM STDIN'))
-    var unpipeDone = gonna('unpipe the stream')
     var onEndCalled = false
     fromClient.connection.stream.on('unpipe', function (src) {
       assert.equal(src, stream)
       assert(!onEndCalled)
-      unpipeDone()
     })
     stream.on('end', function () {
       onEndCalled = true
@@ -56,20 +53,16 @@ describe('copy-from', () => {
       stream.write(Buffer.from('' + i + '\t' + i * 10 + '\n'))
     }
     stream.end()
-    var countDone = gonna('have correct count')
     stream.on('end', function () {
       fromClient.query('SELECT COUNT(*) FROM numbers', function (err, res) {
         assert.ifError(err)
         assert.equal(res.rows[0].count, top, 'expected ' + top + ' rows but got ' + res.rows[0].count)
         assert.equal(stream.rowCount, top, 'expected ' + top + ' rows but db count is ' + stream.rowCount)
         //console.log('found ', res.rows.length, 'rows')
-        countDone()
-        var firstRowDone = gonna('have correct result')
         assert.equal(stream.rowCount, top, 'should have rowCount ' + top + ' ')
         fromClient.query('SELECT (max(num)) AS num FROM numbers', function (err, res) {
           assert.ifError(err)
           assert.equal(res.rows[0].num, top - 1)
-          firstRowDone()
           fromClient.end()
           done()
         })

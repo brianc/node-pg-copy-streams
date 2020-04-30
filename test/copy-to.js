@@ -1,7 +1,6 @@
 'use strict'
 
 var assert = require('assert')
-var gonna = require('gonna')
 
 var _ = require('lodash')
 var async = require('async')
@@ -32,9 +31,6 @@ describe('copy-to', () => {
     var res
 
     var stream = fromClient.query(copy(txt))
-    var donePiping = gonna('finish piping out', 1000, function () {
-      fromClient.end()
-    })
 
     stream.pipe(
       concat(function (buf) {
@@ -46,7 +42,7 @@ describe('copy-to', () => {
       var expected = _.range(0, top).join('\n') + '\n'
       assert.equal(res, expected)
       assert.equal(stream.rowCount, top, 'should have rowCount ' + top + ' but got ' + stream.rowCount)
-      donePiping()
+      fromClient.end()
       done()
     })
   })
@@ -149,8 +145,6 @@ describe('copy-to', () => {
   })
 
   it('test client flowing state', (done) => {
-    var donePiping = gonna('finish piping out')
-    var clientQueryable = gonna('client is still queryable after piping has finished')
     var c = client()
 
     // uncomment the code to see pausing and resuming of the connection stream
@@ -170,7 +164,6 @@ describe('copy-to', () => {
 
     var testConnection = function () {
       c.query('SELECT 1', function () {
-        clientQueryable()
         c.end()
         done()
       })
@@ -182,7 +175,6 @@ describe('copy-to', () => {
       },
     })
     writable.on('finish', function () {
-      donePiping()
       setTimeout(testConnection, 100) // test if the connection didn't drop flowing state
     })
 

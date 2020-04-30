@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/brianc/node-pg-copy-streams.svg)](https://travis-ci.org/brianc/node-pg-copy-streams)
 
-COPY FROM / COPY TO for node-postgres.  Stream from one database to another, and stuff.
+COPY FROM / COPY TO for node-postgres. Stream from one database to another, and stuff.
 
 ## how? what? huh?
 
@@ -11,7 +11,7 @@ This means you can take your favorite CSV or TSV or whatever format file and pip
 You can also take a table and pipe it directly to a file, another database, stdout, even to `/dev/null` if you're crazy!
 
 What this module gives you is a [Readable](http://nodejs.org/api/stream.html#stream_class_stream_readable) or [Writable](http://nodejs.org/api/stream.html#stream_class_stream_writable) stream directly into/out of a table in your database.
-This mode of interfacing with your table is _very fast_ and _very brittle_.  You are responsible for properly encoding and ordering all your columns. If anything is out of place PostgreSQL will send you back an error.  The stream works within a transaction so you wont leave things in a 1/2 borked state, but it's still good to be aware of.
+This mode of interfacing with your table is _very fast_ and _very brittle_. You are responsible for properly encoding and ordering all your columns. If anything is out of place PostgreSQL will send you back an error. The stream works within a transaction so you wont leave things in a 1/2 borked state, but it's still good to be aware of.
 
 If you're not familiar with the feature (I wasn't either) you can read this for some good helps: http://www.postgresql.org/docs/9.3/static/sql-copy.html
 
@@ -20,40 +20,39 @@ If you're not familiar with the feature (I wasn't either) you can read this for 
 ### pipe from a table to stdout
 
 ```js
-var {Pool} = require('pg');
-var copyTo = require('pg-copy-streams').to;
+var { Pool } = require('pg')
+var copyTo = require('pg-copy-streams').to
 
-var pool = new Pool();
+var pool = new Pool()
 
-pool.connect(function(err, client, done) {
-  var stream = client.query(copyTo('COPY my_table TO STDOUT'));
-  stream.pipe(process.stdout);
-  stream.on('end', done);
-  stream.on('error', done);
-});
+pool.connect(function (err, client, done) {
+  var stream = client.query(copyTo('COPY my_table TO STDOUT'))
+  stream.pipe(process.stdout)
+  stream.on('end', done)
+  stream.on('error', done)
+})
 ```
 
 ### pipe from a file to table
 
 ```js
-var fs = require('fs');
-var {Pool} = require('pg');
-var copyFrom = require('pg-copy-streams').from;
+var fs = require('fs')
+var { Pool } = require('pg')
+var copyFrom = require('pg-copy-streams').from
 
-var pool = new Pool();
+var pool = new Pool()
 
-pool.connect(function(err, client, done) {
-  var stream = client.query(copyFrom('COPY my_table FROM STDIN'));
+pool.connect(function (err, client, done) {
+  var stream = client.query(copyFrom('COPY my_table FROM STDIN'))
   var fileStream = fs.createReadStream('some_file.tsv')
-  fileStream.on('error', done);
-  stream.on('error', done);
-  stream.on('end', done);
-  fileStream.pipe(stream);
-});
+  fileStream.on('error', done)
+  stream.on('error', done)
+  stream.on('end', done)
+  fileStream.pipe(stream)
+})
 ```
 
-*Important*: Even if `pg-copy-streams.from` is used as a Writable (via `pipe`), you should not listen for the 'finish' event and expect that the COPY command has already been correctly acknowledged by the database. Internally, a duplex stream is used to pipe the data into the database connection and the COPY command should be considered complete only when the 'end' event is triggered.
-
+_Important_: Even if `pg-copy-streams.from` is used as a Writable (via `pipe`), you should not listen for the 'finish' event and expect that the COPY command has already been correctly acknowledged by the database. Internally, a duplex stream is used to pipe the data into the database connection and the COPY command should be considered complete only when the 'end' event is triggered.
 
 ## install
 
@@ -63,11 +62,12 @@ $ npm install pg-copy-streams
 
 ## notice
 
-This module __only__ works with the pure JavaScript bindings.  If you're using `require('pg').native` please make sure to use normal `require('pg')` or `require('pg.js')` when you're using copy streams.
+This module **only** works with the pure JavaScript bindings. If you're using `require('pg').native` please make sure to use normal `require('pg')` or `require('pg.js')` when you're using copy streams.
 
 Before you set out on this magical piping journey, you _really_ should read this: http://www.postgresql.org/docs/current/static/sql-copy.html, and you might want to take a look at the [tests](https://github.com/brianc/node-pg-copy-streams/tree/master/test) to get an idea of how things work.
 
 Take note of the following warning in the PostgreSQL documentation:
+
 > COPY stops operation at the first error. This should not lead to problems in the event of a COPY TO, but the target table will already have received earlier rows in a COPY FROM. These rows will not be visible or accessible, but they still occupy disk space. This might amount to a considerable amount of wasted disk space if the failure happened well into a large copy operation. You might wish to invoke VACUUM to recover the wasted space.
 
 ## benchmarks
@@ -97,7 +97,7 @@ This is one of those.
 
 Please, if you have any issues with this, open an issue.
 
-Better yet, submit a pull request.  I _love_ pull requests.
+Better yet, submit a pull request. I _love_ pull requests.
 
 Generally how I work is if you submit a few pull requests and you're interested I'll make you a contributor and give you full access to everything.
 
@@ -112,7 +112,7 @@ In the new implementation, all the data payload received from a postgres chunk i
 
 Some users may in the past have relied on the fact the the copy-to chunk boundaries exactly matched row boundaries. A major difference in the 3.x version is that the module does not offer any guarantee that its chunk boundaries match row boundaries. A row data could (and you have to realize that this will happen) be split across 2 or more chunks depending on the size of the rows and on postgres's own chunking decisions.
 
-As a consequence, when the copy-to stream is piped into a pipeline that does row/CSV parsing, you need to make sure that this pipeline correcly handles rows than span across chunk boundaries. For its tests, this module uses the [csv-parser](https://github.com/mafintosh/csv-parser)  module
+As a consequence, when the copy-to stream is piped into a pipeline that does row/CSV parsing, you need to make sure that this pipeline correcly handles rows than span across chunk boundaries. For its tests, this module uses the [csv-parser](https://github.com/mafintosh/csv-parser) module
 
  * Add `prettier` configuration following discussion on brianc/node-postgres#2172
  * Rewrite the copy-to implementation in order to avoid fetching whole rows in memory
@@ -120,25 +120,25 @@ As a consequence, when the copy-to stream is piped into a pipeline that does row
 
 ### version 2.2.2 - published 2019-07-22
 
- * Bugfix copy-to could pause the client connection, preventing re-use
+- Bugfix copy-to could pause the client connection, preventing re-use
 
 ### version 2.2.1 - published 2019-07-22
 
- * Bugfix copy-from was not correctly unpiped from the the connection stream
+- Bugfix copy-from was not correctly unpiped from the the connection stream
 
 ### version 2.2.0 - published 2019-03-21
 
- * Small refactor in copy-from passing from 3 push to 2 push in every chunk transform loop
- * Add bench/ directory for benchmarks
- * Add benchmark to compare performance of pg-copy-stream wrt psql during copy-from
- * Add benchmark to measure memory usage of copy-from
+- Small refactor in copy-from passing from 3 push to 2 push in every chunk transform loop
+- Add bench/ directory for benchmarks
+- Add benchmark to compare performance of pg-copy-stream wrt psql during copy-from
+- Add benchmark to measure memory usage of copy-from
 
 ### version 2.1.0 - published 2019-03-19
 
- * Change README to stop using the pg pool singleton (removed after pg 7.0)
- * Do not register copy-to.pushBufferIfNeeded on the instance itself (avoid dangling method on the object)
- * Fix copy-to test wrt intermittent unhandled promise bug
- * Add tests regarding client re-use
+- Change README to stop using the pg pool singleton (removed after pg 7.0)
+- Do not register copy-to.pushBufferIfNeeded on the instance itself (avoid dangling method on the object)
+- Fix copy-to test wrt intermittent unhandled promise bug
+- Add tests regarding client re-use
 
 ### version 2.0.0 - published 2019-03-14
 
@@ -146,11 +146,12 @@ This version's major change is a modification in the COPY TO implementation. In 
 This is considered to be a major change since some people could be relying on the fact that each outgoing chunk is an individual row.
 
 Other changes in this version
- * Use Strict
- * Travis deprecation of old node version (0.12, 0.4). Support LTS 6, 8, 10 and Current 11
- * Update dev dependencies (pg, lodash)
- * Stop using deprecated Buffer constructor
- * Add package-lock.json
+
+- Use Strict
+- Travis deprecation of old node version (0.12, 0.4). Support LTS 6, 8, 10 and Current 11
+- Update dev dependencies (pg, lodash)
+- Stop using deprecated Buffer constructor
+- Add package-lock.json
 
 ## license
 

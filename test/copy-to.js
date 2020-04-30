@@ -49,13 +49,13 @@ function assertCopyToResult(sql, assertFn) {
 }
 
 describe('copy-to', () => {
-  it('test construction', () => {
+  it('forwards passed options to parent Transform stream', () => {
     var sql = 'COPY (SELECT * FROM generate_series(0, 10)) TO STDOUT'
     var stream = copy(sql, { highWaterMark: 10 })
     assert.equal(stream._readableState.highWaterMark, 10, 'Client should have been set with a correct highWaterMark.')
   })
 
-  it('test range', (done) => {
+  it('provides row count', (done) => {
     var top = 10000
     var sql = 'COPY (SELECT * from generate_series(0, ' + (top - 1) + ')) TO STDOUT'
     assertCopyToResult(sql, (err, chunks, result, stream) => {
@@ -65,7 +65,7 @@ describe('copy-to', () => {
     })
   })
 
-  it('test internal postgres error', (done) => {
+  it('internal postgres error ends copy and emits error', (done) => {
     assertCopyToResult('COPY (SELECT pg_sleep(10)) TO STDOUT', (err, chunks, result, stream) => {
       assert.notEqual(err, null)
       const expectedMessage = 'canceling statement due to user request'
@@ -84,7 +84,7 @@ describe('copy-to', () => {
     }, 50)
   })
 
-  it('test NoticeResponse', (done) => {
+  it('interspersed NoticeResponse message is ignored', (done) => {
     // on the copy stream.
     var client = getClient()
     var set = ''
@@ -111,7 +111,7 @@ describe('copy-to', () => {
     })
   })
 
-  it('test client reuse', (done) => {
+  it('client can be reused for another COPY TO query', (done) => {
     var client = getClient()
     var generateRows = 100000
     var totalRuns = 10
@@ -152,7 +152,7 @@ describe('copy-to', () => {
     runStream(currentRunNumber, processResult)
   })
 
-  it('test client flowing state', (done) => {
+  it('client can be reused for another query', (done) => {
     var client = getClient()
 
     // uncomment the code to see pausing and resuming of the connection stream

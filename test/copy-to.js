@@ -190,4 +190,14 @@ describe('copy-to', () => {
     var stream = client.query(copy(sql, { highWaterMark: 1 }))
     stream.pipe(writable)
   })
+
+  it('two small rows are combined into single chunk', (done) => {
+    const sql = 'COPY (SELECT * FROM generate_series(1, 2)) TO STDOUT'
+    assertCopyToResult(sql, (err, chunks, result, stream) => {
+      assert.ifError(err)
+      assert.equal(chunks.length, 1)
+      assert.deepEqual(chunks[0], Buffer.from('1\n2\n'))
+      done()
+    })
+  })
 })

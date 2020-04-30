@@ -4,7 +4,7 @@
   "description": "Low-Level COPY TO and COPY FROM streams for PostgreSQL in JavaScript using",
   "main": "index.js",
   "scripts": {
-    "test": "node test"
+    "test": "prettier --check . && node test"
   },
   "repository": {
     "type": "git",

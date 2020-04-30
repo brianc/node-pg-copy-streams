@@ -116,6 +116,7 @@ As a consequence, when the copy-to stream is piped into a pipeline that does row
 
  * Add `prettier` configuration following discussion on brianc/node-postgres#2172
  * Rewrite the copy-to implementation in order to avoid fetching whole rows in memory
+ * Use mocha for tests
 
 ### version 2.2.2 - published 2019-07-22
 

@@ -4,7 +4,7 @@
   "description": "Low-Level COPY TO and COPY FROM streams for PostgreSQL in JavaScript using",
   "main": "index.js",
   "scripts": {
-    "test": "npm run lint && node test",
+    "test": "npm run lint && mocha",
     "lint": "[ \"$(node -v | cut -d. -f1)\" = \"v8\" ] || prettier --check ."
   },
   "repository": {
@@ -28,9 +28,9 @@
     "benchmark": "^2.1.4",
     "concat-stream": "~1.1.0",
     "duplex-child-process": "^1.0.0",
-    "gonna": "0.0.0",
     "heroku-env": "~0.1.1",
     "lodash": "^4.17.11",
+    "mocha": "^7.1.2",
     "pg": "^7.8.2",
     "prettier": "^2.0.5"
   },

@@ -114,9 +114,9 @@ Some users may in the past have relied on the fact the the copy-to chunk boundar
 
 As a consequence, when the copy-to stream is piped into a pipeline that does row/CSV parsing, you need to make sure that this pipeline correcly handles rows than span across chunk boundaries. For its tests, this module uses the [csv-parser](https://github.com/mafintosh/csv-parser) module
 
- * Add `prettier` configuration following discussion on brianc/node-postgres#2172
- * Rewrite the copy-to implementation in order to avoid fetching whole rows in memory
- * Use mocha for tests
+- Add `prettier` configuration following discussion on brianc/node-postgres#2172
+- Rewrite the copy-to implementation in order to avoid fetching whole rows in memory
+- Use mocha for tests
 
 ### version 2.2.2 - published 2019-07-22
 

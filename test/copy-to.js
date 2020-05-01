@@ -7,6 +7,7 @@ var concat = require('concat-stream')
 var Writable = require('stream').Writable
 var pg = require('pg')
 var PassThrough = require('stream').PassThrough
+var Transform = require('stream').Transform
 
 var copy = require('../').to
 var code = require('../message-formats')
@@ -43,11 +44,18 @@ describe('copy-to', () => {
       const copyToStream = client.query(copy(sql))
 
       copyToStream.on('error', complete)
-      copyToStream.on('data', (chunk) => chunks.push(chunk))
       copyToStream.on('end', () => {
         const result = Buffer.concat(chunks).toString()
         complete(null, chunks, result, copyToStream)
       })
+      copyToStream.pipe(
+        new Transform({
+          transform: (chunk, enc, cb) => {
+            chunks.push(chunk)
+            cb()
+          },
+        })
+      )
     }
 
     it('provides row count', (done) => {
@@ -91,7 +99,6 @@ describe('copy-to', () => {
         var runStream = function (callback) {
           var sql = "COPY (SELECT '\\\n') TO STDOUT"
           var stream = client.query(copy(sql))
-          stream.on('data', function (data) {})
           stream.on('error', callback)
 
           // make sure stream is pulled from

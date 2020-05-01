@@ -14,6 +14,8 @@ module.exports = {
   CopyDone: 0x63, // c
   CopyData: 0x64, // d
   CopyFail: 0x66, // f
+  CommandComplete: 0x43, // C
+  ReadyForQuery: 0x5a, // Z
 
   // It is possible for NoticeResponse and ParameterStatus messages to be interspersed between CopyData messages;
   // frontends must handle these cases, and should be prepared for other asynchronous message types as well

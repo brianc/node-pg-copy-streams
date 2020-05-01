@@ -26,7 +26,7 @@
   "devDependencies": {
     "async": "~0.2.10",
     "benchmark": "^2.1.4",
-    "concat-stream": "~1.1.0",
+    "concat-stream": "^2.0.0",
     "duplex-child-process": "^1.0.0",
     "heroku-env": "~0.1.1",
     "lodash": "^4.17.11",

@@ -3,7 +3,6 @@
 var assert = require('assert')
 
 var _ = require('lodash')
-var async = require('async')
 var concat = require('concat-stream')
 var Writable = require('stream').Writable
 var pg = require('pg')

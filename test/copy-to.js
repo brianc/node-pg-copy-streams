@@ -9,11 +9,14 @@ var pg = require('pg')
 var PassThrough = require('stream').PassThrough
 var Transform = require('stream').Transform
 
+var csvParser = require('csv-parser')
+var csvParse = require('csv-parse')
+
 var copy = require('../').to
 var code = require('../message-formats')
 
 describe('copy-to', () => {
-  describe('integration tests', () => {
+  describe('integration tests (postgres)', () => {
     function getClient() {
       var client = new pg.Client()
       client.connect()
@@ -212,6 +215,71 @@ describe('copy-to', () => {
         assert.equal(result, `${'-'.repeat(fieldSize)}\n`)
         done()
       })
+    })
+  })
+
+  describe('integration tests (csv parsers)', () => {
+    function readParserResult(csvModule, csvModuleOpts, inputByteArrays) {
+      return new Promise((resolve, reject) => {
+        const parser = csvModule(csvModuleOpts)
+        parser.on('error', reject)
+        var stream = parser.pipe(concat({ encoding: 'object' }, resolve))
+
+        for (const inputByteArray of inputByteArrays) {
+          let inputBuffer = Buffer.from(inputByteArray)
+          parser.write(inputBuffer)
+        }
+        parser.end()
+      })
+    }
+
+    async function assertResult(csvModule, csvModuleOpts, inputByteArrays, expectedContent) {
+      const actualContent = await readParserResult(csvModule, csvModuleOpts, inputByteArrays)
+      assert.deepEqual(actualContent, expectedContent)
+    }
+
+    it('module csv-parser handles cross boundary lines', async () => {
+      const input = Buffer.from('hello,world\ncrossing,boundaries')
+
+      for (let splitAt = 1; splitAt < input.length; splitAt++) {
+        const inputPart1 = input.slice(0, splitAt)
+        const inputPart2 = input.slice(splitAt)
+
+        assert(inputPart1.length > 0)
+        assert(inputPart2.length > 0)
+
+        await assertResult(
+          csvParser,
+          { headers: false },
+          [inputPart1, inputPart2],
+          [
+            { '0': 'hello', '1': 'world' },
+            { '0': 'crossing', '1': 'boundaries' },
+          ]
+        )
+      }
+    })
+
+    it('module csv-parse handles cross boundary lines', async () => {
+      const input = Buffer.from('hello,world\ncrossing,boundaries')
+
+      for (let splitAt = 1; splitAt < input.length; splitAt++) {
+        const inputPart1 = input.slice(0, splitAt)
+        const inputPart2 = input.slice(splitAt)
+
+        assert(inputPart1.length > 0)
+        assert(inputPart2.length > 0)
+
+        await assertResult(
+          csvParse,
+          {},
+          [inputPart1, inputPart2],
+          [
+            ['hello', 'world'],
+            ['crossing', 'boundaries'],
+          ]
+        )
+      }
     })
   })
 

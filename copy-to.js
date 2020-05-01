@@ -84,12 +84,19 @@ CopyStreamQuery.prototype._transform = function (chunk, enc, cb) {
         switch (this._code) {
           case code.CopyOutResponse:
             break
-          case code.CopyDone:
-          case code.ErrorResponse:
-            done = true
-            break
           case code.CopyData:
             this.rowCount++
+            break
+          // standard interspersed messages.
+          // see https://www.postgresql.org/docs/9.6/protocol-flow.html#PROTOCOL-COPY
+          case code.ParameterStatus:
+          case code.NoticeResponse:
+          case code.NotificationResponse:
+            break
+          case code.CopyDone:
+          case code.ErrorResponse:
+          default:
+            done = true
             break
         }
         this._state = PG_CODE

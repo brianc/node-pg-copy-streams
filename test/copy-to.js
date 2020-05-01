@@ -59,7 +59,7 @@ describe('copy-to', () => {
     }
 
     it('provides row count', (done) => {
-      var top = 10000
+      var top = 100
       var sql = 'COPY (SELECT * from generate_series(0, ' + (top - 1) + ')) TO STDOUT'
       assertCopyToResult(sql, (err, chunks, result, stream) => {
         assert.ifError(err)
@@ -84,7 +84,7 @@ describe('copy-to', () => {
         executeSql(
           "SELECT pg_cancel_backend(pid) FROM pg_stat_activity WHERE query ~ 'pg_sleep' AND NOT query ~ 'pg_cancel_backend'"
         )
-      }, 50)
+      }, 20)
     })
 
     it('interspersed NoticeResponse message is ignored', (done) => {
@@ -115,8 +115,8 @@ describe('copy-to', () => {
 
     it('client can be reused for another COPY TO query', (done) => {
       var client = getClient()
-      var generateRows = 100000
-      var totalRuns = 10
+      var generateRows = 100
+      var totalRuns = 5
       var runsLeftToStart = totalRuns
       var currentRunNumber = 0
 
@@ -185,7 +185,7 @@ describe('copy-to', () => {
         },
       })
       writable.on('finish', () => {
-        setTimeout(testConnection, 100) // test if the connection didn't drop flowing state
+        setTimeout(testConnection, 30) // test if the connection didn't drop flowing state
       })
 
       var sql = 'COPY (SELECT 1) TO STDOUT'

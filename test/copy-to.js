@@ -11,204 +11,208 @@ var pg = require('pg')
 var copy = require('../').to
 var code = require('../message-formats')
 
-function getClient() {
-  var client = new pg.Client()
-  client.connect()
-  return client
-}
-
-function executeSql(sql) {
-  const client = getClient()
-  client.query(sql, () => {
-    client.end()
-  })
-}
-
-function assertCopyToResult(sql, assertFn) {
-  const client = getClient()
-  const chunks = []
-  let hasCompleted = false
-
-  function complete(err, chunks, result, stream) {
-    // both 'error' and 'end' events may fire, guard so assertFn is called only once
-    if (!hasCompleted) {
-      hasCompleted = true
-      client.end()
-      assertFn(err, chunks, result, stream)
-    }
-  }
-
-  const copyToStream = client.query(copy(sql))
-
-  copyToStream.on('error', complete)
-  copyToStream.on('data', (chunk) => chunks.push(chunk))
-  copyToStream.on('end', () => {
-    const result = Buffer.concat(chunks).toString()
-    complete(null, chunks, result, copyToStream)
-  })
-}
-
 describe('copy-to', () => {
-  it('forwards passed options to parent Transform stream', () => {
-    var sql = 'COPY (SELECT * FROM generate_series(0, 10)) TO STDOUT'
-    var stream = copy(sql, { highWaterMark: 10 })
-    assert.equal(stream._readableState.highWaterMark, 10, 'Client should have been set with a correct highWaterMark.')
-  })
+  describe('integration tests', () => {
+    function getClient() {
+      var client = new pg.Client()
+      client.connect()
+      return client
+    }
 
-  it('provides row count', (done) => {
-    var top = 10000
-    var sql = 'COPY (SELECT * from generate_series(0, ' + (top - 1) + ')) TO STDOUT'
-    assertCopyToResult(sql, (err, chunks, result, stream) => {
-      assert.ifError(err)
-      assert.equal(stream.rowCount, top, 'should have rowCount ' + top + ' but got ' + stream.rowCount)
-      done()
-    })
-  })
+    function executeSql(sql) {
+      const client = getClient()
+      client.query(sql, () => {
+        client.end()
+      })
+    }
 
-  it('internal postgres error ends copy and emits error', (done) => {
-    assertCopyToResult('COPY (SELECT pg_sleep(10)) TO STDOUT', (err, chunks, result, stream) => {
-      assert.notEqual(err, null)
-      const expectedMessage = 'canceling statement due to user request'
-      assert.notEqual(
-        err.toString().indexOf(expectedMessage),
-        -1,
-        'Error message should mention reason for query failure.'
-      )
-      done()
-    })
+    function assertCopyToResult(sql, assertFn) {
+      const client = getClient()
+      const chunks = []
+      let hasCompleted = false
 
-    setTimeout(() => {
-      executeSql(
-        "SELECT pg_cancel_backend(pid) FROM pg_stat_activity WHERE query ~ 'pg_sleep' AND NOT query ~ 'pg_cancel_backend'"
-      )
-    }, 50)
-  })
-
-  it('interspersed NoticeResponse message is ignored', (done) => {
-    // on the copy stream.
-    var client = getClient()
-    var set = ''
-    set += 'SET SESSION client_min_messages = WARNING;'
-    set += 'SET SESSION standard_conforming_strings = off;'
-    set += 'SET SESSION escape_string_warning = on;'
-    client.query(set, function (err, res) {
-      assert.equal(err, null, 'testNoticeResponse - could not SET parameters')
-      var runStream = function (callback) {
-        var sql = "COPY (SELECT '\\\n') TO STDOUT"
-        var stream = client.query(copy(sql))
-        stream.on('data', function (data) {})
-        stream.on('error', callback)
-
-        // make sure stream is pulled from
-        stream.pipe(concat(callback.bind(null, null)))
+      function complete(err, chunks, result, stream) {
+        // both 'error' and 'end' events may fire, guard so assertFn is called only once
+        if (!hasCompleted) {
+          hasCompleted = true
+          client.end()
+          assertFn(err, chunks, result, stream)
+        }
       }
 
-      runStream(function (err) {
+      const copyToStream = client.query(copy(sql))
+
+      copyToStream.on('error', complete)
+      copyToStream.on('data', (chunk) => chunks.push(chunk))
+      copyToStream.on('end', () => {
+        const result = Buffer.concat(chunks).toString()
+        complete(null, chunks, result, copyToStream)
+      })
+    }
+
+    it('provides row count', (done) => {
+      var top = 10000
+      var sql = 'COPY (SELECT * from generate_series(0, ' + (top - 1) + ')) TO STDOUT'
+      assertCopyToResult(sql, (err, chunks, result, stream) => {
         assert.ifError(err)
-        client.end()
+        assert.equal(stream.rowCount, top, 'should have rowCount ' + top + ' but got ' + stream.rowCount)
         done()
       })
     })
-  })
 
-  it('client can be reused for another COPY TO query', (done) => {
-    var client = getClient()
-    var generateRows = 100000
-    var totalRuns = 10
-    var runsLeftToStart = totalRuns
-    var currentRunNumber = 0
-
-    function runStream(num, callback) {
-      var sql = 'COPY (SELECT * FROM generate_series(0,' + generateRows + ')) TO STDOUT'
-      var stream = client.query(copy(sql))
-      stream.on('error', callback)
-      stream.pipe(
-        concat(function (buf) {
-          var res = buf.toString('utf8')
-          var exp = _.range(0, generateRows + 1).join('\n') + '\n'
-          assert.equal(res, exp, 'clientReuse: sent & received buffer should be equal')
-          currentRunNumber++
-          callback()
-        })
-      )
-    }
-
-    function processResult(err) {
-      assert.ifError(err)
-      runsLeftToStart--
-      if (runsLeftToStart) {
-        runStream(currentRunNumber, processResult)
-      } else {
-        assert.equal(
-          currentRunNumber,
-          totalRuns,
-          'clientReuse: there should be equal amount of queries on the same client'
+    it('internal postgres error ends copy and emits error', (done) => {
+      assertCopyToResult('COPY (SELECT pg_sleep(10)) TO STDOUT', (err, chunks, result, stream) => {
+        assert.notEqual(err, null)
+        const expectedMessage = 'canceling statement due to user request'
+        assert.notEqual(
+          err.toString().indexOf(expectedMessage),
+          -1,
+          'Error message should mention reason for query failure.'
         )
-        client.end()
-        done()
-      }
-    }
-
-    runStream(currentRunNumber, processResult)
-  })
-
-  it('client can be reused for another query', (done) => {
-    var client = getClient()
-
-    // uncomment the code to see pausing and resuming of the connection stream
-
-    //const orig_resume = client.connection.stream.resume;
-    //const orig_pause = client.connection.stream.pause;
-    //
-    //client.connection.stream.resume = function () {
-    //  console.log('resume', new Error().stack);
-    //  orig_resume.apply(this, arguments)
-    //}
-    //
-    //client.connection.stream.pause = function () {
-    //  console.log('pause', new Error().stack);
-    //  orig_pause.apply(this, arguments)
-    //}
-
-    function testConnection() {
-      client.query('SELECT 1', function () {
-        client.end()
         done()
       })
-    }
 
-    var writable = new Writable({
-      write: function (chunk, encoding, cb) {
-        cb()
-      },
-    })
-    writable.on('finish', () => {
-      setTimeout(testConnection, 100) // test if the connection didn't drop flowing state
+      setTimeout(() => {
+        executeSql(
+          "SELECT pg_cancel_backend(pid) FROM pg_stat_activity WHERE query ~ 'pg_sleep' AND NOT query ~ 'pg_cancel_backend'"
+        )
+      }, 50)
     })
 
-    var sql = 'COPY (SELECT 1) TO STDOUT'
-    var stream = client.query(copy(sql, { highWaterMark: 1 }))
-    stream.pipe(writable)
+    it('interspersed NoticeResponse message is ignored', (done) => {
+      // on the copy stream.
+      var client = getClient()
+      var set = ''
+      set += 'SET SESSION client_min_messages = WARNING;'
+      set += 'SET SESSION standard_conforming_strings = off;'
+      set += 'SET SESSION escape_string_warning = on;'
+      client.query(set, function (err, res) {
+        assert.equal(err, null, 'testNoticeResponse - could not SET parameters')
+        var runStream = function (callback) {
+          var sql = "COPY (SELECT '\\\n') TO STDOUT"
+          var stream = client.query(copy(sql))
+          stream.on('data', function (data) {})
+          stream.on('error', callback)
+
+          // make sure stream is pulled from
+          stream.pipe(concat(callback.bind(null, null)))
+        }
+
+        runStream(function (err) {
+          assert.ifError(err)
+          client.end()
+          done()
+        })
+      })
+    })
+
+    it('client can be reused for another COPY TO query', (done) => {
+      var client = getClient()
+      var generateRows = 100000
+      var totalRuns = 10
+      var runsLeftToStart = totalRuns
+      var currentRunNumber = 0
+
+      function runStream(num, callback) {
+        var sql = 'COPY (SELECT * FROM generate_series(0,' + generateRows + ')) TO STDOUT'
+        var stream = client.query(copy(sql))
+        stream.on('error', callback)
+        stream.pipe(
+          concat(function (buf) {
+            var res = buf.toString('utf8')
+            var exp = _.range(0, generateRows + 1).join('\n') + '\n'
+            assert.equal(res, exp, 'clientReuse: sent & received buffer should be equal')
+            currentRunNumber++
+            callback()
+          })
+        )
+      }
+
+      function processResult(err) {
+        assert.ifError(err)
+        runsLeftToStart--
+        if (runsLeftToStart) {
+          runStream(currentRunNumber, processResult)
+        } else {
+          assert.equal(
+            currentRunNumber,
+            totalRuns,
+            'clientReuse: there should be equal amount of queries on the same client'
+          )
+          client.end()
+          done()
+        }
+      }
+
+      runStream(currentRunNumber, processResult)
+    })
+
+    it('client can be reused for another query', (done) => {
+      var client = getClient()
+
+      // uncomment the code to see pausing and resuming of the connection stream
+
+      //const orig_resume = client.connection.stream.resume;
+      //const orig_pause = client.connection.stream.pause;
+      //
+      //client.connection.stream.resume = function () {
+      //  console.log('resume', new Error().stack);
+      //  orig_resume.apply(this, arguments)
+      //}
+      //
+      //client.connection.stream.pause = function () {
+      //  console.log('pause', new Error().stack);
+      //  orig_pause.apply(this, arguments)
+      //}
+
+      function testConnection() {
+        client.query('SELECT 1', function () {
+          client.end()
+          done()
+        })
+      }
+
+      var writable = new Writable({
+        write: function (chunk, encoding, cb) {
+          cb()
+        },
+      })
+      writable.on('finish', () => {
+        setTimeout(testConnection, 100) // test if the connection didn't drop flowing state
+      })
+
+      var sql = 'COPY (SELECT 1) TO STDOUT'
+      var stream = client.query(copy(sql, { highWaterMark: 1 }))
+      stream.pipe(writable)
+    })
+
+    it('two small rows are combined into single chunk', (done) => {
+      const sql = 'COPY (SELECT * FROM generate_series(1, 2)) TO STDOUT'
+      assertCopyToResult(sql, (err, chunks, result, stream) => {
+        assert.ifError(err)
+        assert.equal(chunks.length, 1)
+        assert.deepEqual(chunks[0], Buffer.from('1\n2\n'))
+        done()
+      })
+    })
+
+    it('one large row emits multiple chunks', (done) => {
+      const fieldSize = 64 * 1024
+      const sql = `COPY (SELECT repeat('-', ${fieldSize})) TO STDOUT`
+      assertCopyToResult(sql, (err, chunks, result, stream) => {
+        assert.ifError(err)
+        assert(chunks.length > 1)
+        assert.equal(result, `${'-'.repeat(fieldSize)}\n`)
+        done()
+      })
+    })
   })
 
-  it('two small rows are combined into single chunk', (done) => {
-    const sql = 'COPY (SELECT * FROM generate_series(1, 2)) TO STDOUT'
-    assertCopyToResult(sql, (err, chunks, result, stream) => {
-      assert.ifError(err)
-      assert.equal(chunks.length, 1)
-      assert.deepEqual(chunks[0], Buffer.from('1\n2\n'))
-      done()
-    })
-  })
-
-  it('one large row emits multiple chunks', (done) => {
-    const fieldSize = 64 * 1024
-    const sql = `COPY (SELECT repeat('-', ${fieldSize})) TO STDOUT`
-    assertCopyToResult(sql, (err, chunks, result, stream) => {
-      assert.ifError(err)
-      assert(chunks.length > 1)
-      assert.equal(result, `${'-'.repeat(fieldSize)}\n`)
-      done()
+  describe('unit tests', () => {
+    it('forwards passed options to parent Transform stream', () => {
+      var sql = 'COPY (SELECT * FROM generate_series(0, 10)) TO STDOUT'
+      var stream = copy(sql, { highWaterMark: 10 })
+      assert.equal(stream._readableState.highWaterMark, 10, 'Client should have been set with a correct highWaterMark.')
     })
   })
 })

@@ -211,14 +211,27 @@ describe('copy-to', () => {
   describe('unit tests', () => {
     function readCopyToResult(inputByteArrays) {
       return new Promise((resolve, reject) => {
-        const copyToStream = copy()
-        copyToStream.connection = { stream: new PassThrough() }
+        // mock a pg client/server
+        const pgStream = new PassThrough()
+        const pgConnection = {
+          stream: pgStream,
+          query: () => {},
+          removeAllListeners: () => {},
+        }
+        const pgClient = {
+          connection: pgConnection,
+          query: function (submittable) {
+            submittable.submit(this.connection)
+          },
+        }
+
+        const copyToStream = copy(/*sql*/)
+        pgClient.query(copyToStream)
 
         for (const inputByteArray of inputByteArrays) {
           let inputBuffer = Buffer.from(inputByteArray)
-          copyToStream.write(inputBuffer)
+          pgStream.write(inputBuffer)
         }
-        copyToStream.end()
 
         copyToStream.on('error', reject)
         copyToStream.pipe(concat({ encoding: 'string' }, resolve))
@@ -234,10 +247,6 @@ describe('copy-to', () => {
       var sql = 'COPY (SELECT * FROM generate_series(0, 10)) TO STDOUT'
       var stream = copy(sql, { highWaterMark: 10 })
       assert.equal(stream._readableState.highWaterMark, 10, 'Client should have been set with a correct highWaterMark.')
-    })
-
-    it('empty input gives empty result', async () => {
-      await assertResult([], '')
     })
 
     it('input without row data gives empty result', async () => {

@@ -47,6 +47,11 @@ CopyStreamQuery.prototype._detach = function () {
   })
 }
 
+CopyStreamQuery.prototype._cleanup = function () {
+  this._buffer = null
+  this._copyDataChunks = null
+}
+
 CopyStreamQuery.prototype._transform = function (chunk, enc, cb) {
   var done = false
   this._buffer.push(chunk)
@@ -101,6 +106,7 @@ CopyStreamQuery.prototype._transform = function (chunk, enc, cb) {
   if (done) {
     this._detach()
     this.push(null)
+    this._cleanup()
   }
 
   cb()

@@ -33,6 +33,8 @@ pool.connect(function (err, client, done) {
 })
 ```
 
+_important_: When copying data out of postgresql, postgresql will chunk the data on 64kB boundaries. You should expect rows to be cut across the boundaries of these chunks (the end of a chunk will not always match the end of a row). If you are piping the csv output of postgres into a file, this might not be a problem. But if you are trying to analyse the csv output on-the-fly, you need to make sure that you correcly discover the lines of the csv output across the chunk boundaries. We are not recommending any specific streaming csv parser but `csv-parser` and `csv-parse` seem to correctly handle this.
+
 ### pipe from a file to table
 
 ```js
@@ -52,7 +54,7 @@ pool.connect(function (err, client, done) {
 })
 ```
 
-_Important_: Even if `pg-copy-streams.from` is used as a Writable (via `pipe`), you should not listen for the 'finish' event and expect that the COPY command has already been correctly acknowledged by the database. Internally, a duplex stream is used to pipe the data into the database connection and the COPY command should be considered complete only when the 'end' event is triggered.
+_Important_: When copying data into postgresql, even if `pg-copy-streams.from` is used as a Writable (via `pipe`), you should not listen for the 'finish' event and expect that the COPY command has already been correctly acknowledged by the database. Internally, a duplex stream is used to pipe the data into the database connection and the COPY command should be considered complete only when the 'end' event is triggered.
 
 ## install
 
@@ -117,6 +119,8 @@ As a consequence, when the copy-to stream is piped into a pipeline that does row
 - Add `prettier` configuration following discussion on brianc/node-postgres#2172
 - Rewrite the copy-to implementation in order to avoid fetching whole rows in memory
 - Use mocha for tests
+- Add new tests for copy-to.js focusing on chunk boundaries
+- Add integration tests for two streaming csv parsers: csv-parser and csv-parse
 
 ### version 2.2.2 - published 2019-07-22
 

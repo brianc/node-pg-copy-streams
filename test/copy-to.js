@@ -6,6 +6,7 @@ var _ = require('lodash')
 var concat = require('concat-stream')
 var Writable = require('stream').Writable
 var pg = require('pg')
+var PassThrough = require('stream').PassThrough
 
 var copy = require('../').to
 var code = require('../message-formats')
@@ -208,10 +209,58 @@ describe('copy-to', () => {
   })
 
   describe('unit tests', () => {
+    function readCopyToResult(inputByteArrays) {
+      return new Promise((resolve, reject) => {
+        const copyToStream = copy()
+        copyToStream.connection = { stream: new PassThrough() }
+
+        for (const inputByteArray of inputByteArrays) {
+          let inputBuffer = Buffer.from(inputByteArray)
+          copyToStream.write(inputBuffer)
+        }
+        copyToStream.end()
+
+        copyToStream.on('error', reject)
+        copyToStream.pipe(concat({ encoding: 'string' }, resolve))
+      })
+    }
+
+    async function assertResult(inputByteArrays, expectedContent) {
+      const actualContent = await readCopyToResult(inputByteArrays)
+      assert.deepEqual(actualContent, expectedContent)
+    }
+
     it('forwards passed options to parent Transform stream', () => {
       var sql = 'COPY (SELECT * FROM generate_series(0, 10)) TO STDOUT'
       var stream = copy(sql, { highWaterMark: 10 })
       assert.equal(stream._readableState.highWaterMark, 10, 'Client should have been set with a correct highWaterMark.')
+    })
+
+    it('empty input gives empty result', async () => {
+      await assertResult([], '')
+    })
+
+    it('input without row data gives empty result', async () => {
+      await assertResult([[code.CopyOutResponse, 0x0, 0x0, 0x0, 0x4, code.CopyDone, 0x0, 0x0, 0x0, 0x4]], '')
+    })
+
+    it('complex input cut at chunk boundary every possible way gives correct result', async () => {
+      const input = []
+      input.push(code.CopyOutResponse, 0x00, 0x00, 0x00, 0x09, 0x00, 0x00, 0x01, 0x00, 0x00)
+      input.push(code.CopyData, 0x00, 0x00, 0x00, 0x07, 0x78, 0x79, 0x0a)
+      input.push(code.CopyDone, 0x00, 0x00, 0x00, 0x04)
+      input.push(code.CommandComplete, 0x00, 0x00, 0x00, 0x0b, 0x43, 0x4f, 0x50, 0x59, 0x20, 0x31, 0x00)
+      input.push(code.ReadyForQuery, 0x00, 0x00, 0x00, 0x05, 0x4)
+
+      for (let splitAt = 1; splitAt < input.length; splitAt++) {
+        const inputPart1 = input.slice(0, splitAt)
+        const inputPart2 = input.slice(splitAt)
+
+        assert(inputPart1.length > 0)
+        assert(inputPart2.length > 0)
+
+        await assertResult([inputPart1, inputPart2], 'xy\n')
+      }
     })
   })
 })

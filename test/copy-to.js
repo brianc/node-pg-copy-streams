@@ -4,10 +4,10 @@ const assert = require('assert')
 
 const _ = require('lodash')
 const concat = require('concat-stream')
-const Writable = require('stream').Writable
+const { Writable } = require('stream')
 const pg = require('pg')
-const PassThrough = require('stream').PassThrough
-const Transform = require('stream').Transform
+const { PassThrough } = require('stream')
+const { Transform } = require('stream')
 
 const csvParser = require('csv-parser')
 const csvParse = require('csv-parse')

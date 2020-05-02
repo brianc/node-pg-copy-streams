@@ -10,7 +10,7 @@ module.exports = {
   },
 }
 
-const Transform = require('stream').Transform
+const { Transform } = require('stream')
 const code = require('./message-formats')
 
 class CopyStreamQuery extends Transform {

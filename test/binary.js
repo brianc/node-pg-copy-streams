@@ -6,8 +6,7 @@ const async = require('async')
 const _ = require('lodash')
 const pg = require('pg')
 
-const from = require('../').from
-const to = require('../').to
+const { from, to } = require('../')
 
 describe('binary', () => {
   it('test binary copy', (done) => {

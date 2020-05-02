@@ -4,7 +4,7 @@ module.exports = function (txt, options) {
   return new CopyStreamQuery(txt, options)
 }
 
-const Transform = require('stream').Transform
+const { Transform } = require('stream')
 const BufferList = require('obuf')
 const code = require('./message-formats')
 

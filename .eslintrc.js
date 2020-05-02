@@ -14,5 +14,7 @@ module.exports = {
     'prefer-const': ['error'],
     'no-var': ['error'],
     'no-unused-vars': ['error', { args: 'none' }],
+    'prefer-destructuring': ['error'],
+    'no-useless-rename': ['error'],
   },
 }

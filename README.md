@@ -109,6 +109,8 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
 ### version 3.x - not yet published
 
+### version 3.0.0 - published 2020-05-02
+
 This version's major change is a modification in the COPY TO implementation. In the previous versions, a row could be pushed downstream only after the full row was gathered in memory. In many cases, rows are small and this is not an issue. But there are some use cases where rows can grow bigger (think of a row containing a 1MB raw image in a BYTEA field. cf issue #91). In these cases, the library was constantly trying to allocate very big buffers and this could lead to severe performance issues.
 In the new implementation, all the data payload received from a postgres chunk is sent downstream without waiting for full row boundaries.
 
@@ -121,6 +123,9 @@ As a consequence, when the copy-to stream is piped into a pipeline that does row
 - Use mocha for tests
 - Add new tests for copy-to.js focusing on chunk boundaries
 - Add integration tests for two streaming csv parsers: csv-parser and csv-parse
+- Add eslint
+- Add test for quick&dirty bytea binary extraction
+- Add benchmark for copy-to in bench/copy-to.js
 
 ### version 2.2.2 - published 2019-07-22
 

@@ -5,19 +5,53 @@ const assert = require('assert')
 const async = require('async')
 const _ = require('lodash')
 const pg = require('pg')
+const concat = require('concat-stream')
+const { Transform } = require('stream')
 
 const { from, to } = require('../')
 
 describe('binary', () => {
-  it('test binary copy', (done) => {
-    const client = function () {
-      const client = new pg.Client()
-      client.connect()
-      return client
-    }
+  const getClient = function () {
+    const client = new pg.Client()
+    client.connect()
+    return client
+  }
 
-    const fromClient = client()
-    const toClient = client()
+  it('extract bytea field', (done) => {
+    const power = 17
+    const sql = "COPY (select (repeat('-', CAST(2^" + power + ' AS int)))::bytea) TO STDOUT BINARY'
+    const client = getClient()
+    const copyToStream = client.query(to(sql))
+    const assertResult = (buf) => {
+      client.end()
+      assert.deepEqual(buf, Buffer.alloc(Math.pow(2, power), '-'))
+      done()
+    }
+    let firstChunk = true
+    let byteaLength = 0
+    copyToStream
+      .pipe(
+        new Transform({
+          transform: function (chunk, enc, cb) {
+            if (firstChunk) {
+              const headerLength = /*Signature*/ 11 + /*Flags*/ 4 + /*Extension*/ 4 + /*FieldCount*/ 2
+              byteaLength = chunk.readUInt32BE(headerLength)
+              chunk = chunk.slice(headerLength + 4)
+              firstChunk = false
+            }
+            chunk = chunk.slice(0, byteaLength)
+            byteaLength -= chunk.length
+            this.push(chunk)
+            cb()
+          },
+        })
+      )
+      .pipe(concat({ encoding: 'buffer' }, assertResult))
+  })
+
+  it('table-2-table binary copy should work', (done) => {
+    const fromClient = getClient()
+    const toClient = getClient()
 
     let queries = [
       'DROP TABLE IF EXISTS data',

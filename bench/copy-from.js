@@ -1,31 +1,31 @@
-var Benchmark = require('benchmark')
-var cp = require('duplex-child-process')
-var pg = require('pg')
+const Benchmark = require('benchmark')
+const cp = require('duplex-child-process')
+const pg = require('pg')
 
-var copy = require('../').from
+const copy = require('../').from
 
-var client = function () {
-  var client = new pg.Client()
+const client = function () {
+  const client = new pg.Client()
   client.connect()
   return client
 }
 
-var psql = '/opt/postgresql-9.6.1/bin/psql'
-var limit = 999999
-var inStream = function () {
+const psql = '/opt/postgresql-9.6.1/bin/psql'
+const limit = 999999
+const inStream = function () {
   return cp.spawn('seq', ['0', '' + limit])
 }
-var suite = new Benchmark.Suite()
+const suite = new Benchmark.Suite()
 suite
   .add({
     name: 'unix pipe into psql COPY',
     defer: true,
     fn: function (d) {
-      var c = client()
+      const c = client()
       c.query('DROP TABLE IF EXISTS plugnumber', function () {
         c.query('CREATE TABLE plugnumber (num int)', function () {
           c.end()
-          var from = cp.spawn('sh', [
+          const from = cp.spawn('sh', [
             '-c',
             'seq 0 ' + limit + ' | ' + psql + " postgres -c 'COPY plugnumber FROM STDIN'",
           ])
@@ -40,12 +40,12 @@ suite
     name: 'pipe into psql COPY',
     defer: true,
     fn: function (d) {
-      var c = client()
+      const c = client()
       c.query('DROP TABLE IF EXISTS plugnumber', function () {
         c.query('CREATE TABLE plugnumber (num int)', function () {
           c.end()
-          var seq = inStream()
-          var from = cp.spawn(psql, ['postgres', '-c', 'COPY plugnumber FROM STDIN'])
+          const seq = inStream()
+          const from = cp.spawn(psql, ['postgres', '-c', 'COPY plugnumber FROM STDIN'])
           seq.pipe(from)
           from.on('close', function () {
             d.resolve()
@@ -58,11 +58,11 @@ suite
     name: 'pipe into pg-copy-stream COPY',
     defer: true,
     fn: function (d) {
-      var c = client()
+      const c = client()
       c.query('DROP TABLE IF EXISTS plugnumber', function () {
         c.query('CREATE TABLE plugnumber (num int)', function () {
-          var seq = inStream()
-          var from = c.query(copy('COPY plugnumber FROM STDIN'))
+          const seq = inStream()
+          const from = c.query(copy('COPY plugnumber FROM STDIN'))
           seq.pipe(from)
           from.on('end', function () {
             c.end()
@@ -80,7 +80,7 @@ suite
     console.log('Fastest is ' + this.filter('fastest').map('name'))
   })
 
-var c = client()
+const c = client()
 c.query('DROP TABLE IF EXISTS plugnumber', function () {
   c.end()
   suite.run()

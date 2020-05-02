@@ -4,17 +4,17 @@ module.exports = function (txt, options) {
   return new CopyStreamQuery(txt, options)
 }
 
-var Transform = require('stream').Transform
-var BufferList = require('obuf')
-var util = require('util')
-var code = require('./message-formats')
+const Transform = require('stream').Transform
+const BufferList = require('obuf')
+const util = require('util')
+const code = require('./message-formats')
 
 // decoder states
 const PG_CODE = 0
 const PG_LENGTH = 1
 const PG_MESSAGE = 2
 
-var CopyStreamQuery = function (text, options) {
+const CopyStreamQuery = function (text, options) {
   Transform.call(this, options)
   this.text = text
   this.rowCount = 0
@@ -26,7 +26,7 @@ var CopyStreamQuery = function (text, options) {
 
 util.inherits(CopyStreamQuery, Transform)
 
-var eventTypes = ['close', 'data', 'end', 'error']
+const eventTypes = ['close', 'data', 'end', 'error']
 
 CopyStreamQuery.prototype.submit = function (connection) {
   connection.query(this.text)
@@ -36,7 +36,7 @@ CopyStreamQuery.prototype.submit = function (connection) {
 }
 
 CopyStreamQuery.prototype._detach = function () {
-  var connectionStream = this.connection.stream
+  const connectionStream = this.connection.stream
   connectionStream.unpipe(this)
 
   // unpipe can pause the stream but also underlying onData event can potentially pause the stream because of hitting
@@ -53,7 +53,7 @@ CopyStreamQuery.prototype._cleanup = function () {
 }
 
 CopyStreamQuery.prototype._transform = function (chunk, enc, cb) {
-  var done = false
+  let done = false
   this._buffer.push(chunk)
 
   while (this._buffer.size > 0) {
@@ -71,8 +71,8 @@ CopyStreamQuery.prototype._transform = function (chunk, enc, cb) {
 
     if (PG_MESSAGE === this._state) {
       if (this._unreadMessageContentLength > 0 && this._buffer.size > 0) {
-        let n = Math.min(this._buffer.size, this._unreadMessageContentLength)
-        let copyDataChunk = this._buffer.take(n)
+        const n = Math.min(this._buffer.size, this._unreadMessageContentLength)
+        const copyDataChunk = this._buffer.take(n)
         this._unreadMessageContentLength -= n
         if (this._code === code.CopyData) {
           this._copyDataChunks.push(copyDataChunk)
@@ -105,7 +105,7 @@ CopyStreamQuery.prototype._transform = function (chunk, enc, cb) {
   }
 
   // flush data if any data has been captured
-  let len = this._copyDataChunks.size
+  const len = this._copyDataChunks.size
   if (len > 0) {
     this.push(this._copyDataChunks.take(len))
   }

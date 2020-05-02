@@ -1,25 +1,25 @@
-var cp = require('duplex-child-process')
-var pg = require('pg')
+const cp = require('duplex-child-process')
+const pg = require('pg')
 
-var copy = require('../').from
+const copy = require('../').from
 
-var client = function () {
-  var client = new pg.Client()
+const client = function () {
+  const client = new pg.Client()
   client.connect()
   return client
 }
 
-var inStream = function () {
+const inStream = function () {
   return cp.spawn('seq', ['0', '29999999'])
 }
 
-var running = true
+let running = true
 
-var c = client()
+const c = client()
 c.query('DROP TABLE IF EXISTS plugnumber', function () {
   c.query('CREATE TABLE plugnumber (num int)', function () {
-    var seq = inStream()
-    var from = c.query(copy('COPY plugnumber FROM STDIN'))
+    const seq = inStream()
+    const from = c.query(copy('COPY plugnumber FROM STDIN'))
     seq.pipe(from)
     from.on('end', function () {
       running = false
@@ -28,11 +28,11 @@ c.query('DROP TABLE IF EXISTS plugnumber', function () {
   })
 })
 
-var rssMin = process.memoryUsage().rss / 1024 / 1024
-var rssMax = rssMin
+let rssMin = process.memoryUsage().rss / 1024 / 1024
+let rssMax = rssMin
 
 memlog = function () {
-  var rss = process.memoryUsage().rss / 1024 / 1024
+  const rss = process.memoryUsage().rss / 1024 / 1024
   rssMin = Math.min(rss, rssMin)
   rssMax = Math.max(rss, rssMax)
   console.log(

@@ -1,27 +1,27 @@
 'use strict'
 
-var assert = require('assert')
+const assert = require('assert')
 
-var async = require('async')
-var concat = require('concat-stream')
-var _ = require('lodash')
-var pg = require('pg')
+const async = require('async')
+const concat = require('concat-stream')
+const _ = require('lodash')
+const pg = require('pg')
 
-var from = require('../').from
-var to = require('../').to
+const from = require('../').from
+const to = require('../').to
 
 describe('binary', () => {
   it('test binary copy', (done) => {
-    var client = function () {
-      var client = new pg.Client()
+    const client = function () {
+      const client = new pg.Client()
       client.connect()
       return client
     }
 
-    var fromClient = client()
-    var toClient = client()
+    const fromClient = client()
+    const toClient = client()
 
-    var queries = [
+    let queries = [
       'DROP TABLE IF EXISTS data',
       'CREATE TABLE IF NOT EXISTS data (num BIGINT, word TEXT)',
       "INSERT INTO data (num, word) VALUES (1, 'hello'), (2, 'other thing'), (3, 'goodbye')",
@@ -32,10 +32,10 @@ describe('binary', () => {
     async.eachSeries(queries, _.bind(fromClient.query, fromClient), function (err) {
       assert.ifError(err)
 
-      var fromStream = fromClient.query(to('COPY (SELECT * FROM data) TO STDOUT BINARY'))
-      var toStream = toClient.query(from('COPY data_copy FROM STDIN BINARY'))
+      const fromStream = fromClient.query(to('COPY (SELECT * FROM data) TO STDOUT BINARY'))
+      const toStream = toClient.query(from('COPY data_copy FROM STDIN BINARY'))
 
-      var runStream = function (callback) {
+      const runStream = function (callback) {
         fromStream.on('error', callback)
         toStream.on('error', callback)
         toStream.on('finish', callback)

@@ -1,6 +1,6 @@
 'use strict'
 
-var CopyToQueryStream = require('./copy-to')
+const CopyToQueryStream = require('./copy-to')
 module.exports = {
   to: function (txt, options) {
     return new CopyToQueryStream(txt, options)
@@ -10,11 +10,11 @@ module.exports = {
   },
 }
 
-var Transform = require('stream').Transform
-var util = require('util')
-var code = require('./message-formats')
+const Transform = require('stream').Transform
+const util = require('util')
+const code = require('./message-formats')
 
-var CopyStreamQuery = function (text, options) {
+const CopyStreamQuery = function (text, options) {
   Transform.call(this, options)
   this.text = text
   this._listeners = null
@@ -30,8 +30,8 @@ CopyStreamQuery.prototype.submit = function (connection) {
 }
 
 CopyStreamQuery.prototype._transform = function (chunk, enc, cb) {
-  var Int32Len = 4
-  var lenBuffer = Buffer.from([code.CopyData, 0, 0, 0, 0])
+  const Int32Len = 4
+  const lenBuffer = Buffer.from([code.CopyData, 0, 0, 0, 0])
   lenBuffer.writeUInt32BE(chunk.length + Int32Len, 1)
   this.push(lenBuffer)
   this.push(chunk)
@@ -39,8 +39,8 @@ CopyStreamQuery.prototype._transform = function (chunk, enc, cb) {
 }
 
 CopyStreamQuery.prototype._flush = function (cb) {
-  var Int32Len = 4
-  var finBuffer = Buffer.from([code.CopyDone, 0, 0, 0, Int32Len])
+  const Int32Len = 4
+  const finBuffer = Buffer.from([code.CopyDone, 0, 0, 0, Int32Len])
   this.push(finBuffer)
   this.cb_flush = cb
 }
@@ -56,7 +56,7 @@ CopyStreamQuery.prototype.handleCopyInResponse = function (connection) {
 CopyStreamQuery.prototype.handleCommandComplete = function (msg) {
   // Parse affected row count as in
   // https://github.com/brianc/node-postgres/blob/35e5567f86774f808c2a8518dd312b8aa3586693/lib/result.js#L37
-  var match = /COPY (\d+)/.exec((msg || {}).text)
+  const match = /COPY (\d+)/.exec((msg || {}).text)
   if (match) {
     this.rowCount = parseInt(match[1], 10)
   }

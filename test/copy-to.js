@@ -1,24 +1,24 @@
 'use strict'
 
-var assert = require('assert')
+const assert = require('assert')
 
-var _ = require('lodash')
-var concat = require('concat-stream')
-var Writable = require('stream').Writable
-var pg = require('pg')
-var PassThrough = require('stream').PassThrough
-var Transform = require('stream').Transform
+const _ = require('lodash')
+const concat = require('concat-stream')
+const { Writable } = require('stream')
+const pg = require('pg')
+const { PassThrough } = require('stream')
+const { Transform } = require('stream')
 
-var csvParser = require('csv-parser')
-var csvParse = require('csv-parse')
+const csvParser = require('csv-parser')
+const csvParse = require('csv-parse')
 
-var copy = require('../').to
-var code = require('../message-formats')
+const copy = require('../').to
+const code = require('../message-formats')
 
 describe('copy-to', () => {
   describe('integration tests (postgres)', () => {
     function getClient() {
-      var client = new pg.Client()
+      const client = new pg.Client()
       client.connect()
       return client
     }
@@ -62,8 +62,8 @@ describe('copy-to', () => {
     }
 
     it('provides row count', (done) => {
-      var top = 100
-      var sql = 'COPY (SELECT * from generate_series(0, ' + (top - 1) + ')) TO STDOUT'
+      const top = 100
+      const sql = 'COPY (SELECT * from generate_series(0, ' + (top - 1) + ')) TO STDOUT'
       assertCopyToResult(sql, (err, chunks, result, stream) => {
         assert.ifError(err)
         assert.equal(stream.rowCount, top, 'should have rowCount ' + top + ' but got ' + stream.rowCount)
@@ -92,16 +92,16 @@ describe('copy-to', () => {
 
     it('interspersed NoticeResponse message is ignored', (done) => {
       // on the copy stream.
-      var client = getClient()
-      var set = ''
+      const client = getClient()
+      let set = ''
       set += 'SET SESSION client_min_messages = WARNING;'
       set += 'SET SESSION standard_conforming_strings = off;'
       set += 'SET SESSION escape_string_warning = on;'
       client.query(set, function (err, res) {
         assert.equal(err, null, 'testNoticeResponse - could not SET parameters')
-        var runStream = function (callback) {
-          var sql = "COPY (SELECT '\\\n') TO STDOUT"
-          var stream = client.query(copy(sql))
+        const runStream = function (callback) {
+          const sql = "COPY (SELECT '\\\n') TO STDOUT"
+          const stream = client.query(copy(sql))
           stream.on('error', callback)
 
           // make sure stream is pulled from
@@ -117,20 +117,20 @@ describe('copy-to', () => {
     })
 
     it('client can be reused for another COPY TO query', (done) => {
-      var client = getClient()
-      var generateRows = 100
-      var totalRuns = 5
-      var runsLeftToStart = totalRuns
-      var currentRunNumber = 0
+      const client = getClient()
+      const generateRows = 100
+      const totalRuns = 5
+      let runsLeftToStart = totalRuns
+      let currentRunNumber = 0
 
       function runStream(num, callback) {
-        var sql = 'COPY (SELECT * FROM generate_series(0,' + generateRows + ')) TO STDOUT'
-        var stream = client.query(copy(sql))
+        const sql = 'COPY (SELECT * FROM generate_series(0,' + generateRows + ')) TO STDOUT'
+        const stream = client.query(copy(sql))
         stream.on('error', callback)
         stream.pipe(
           concat(function (buf) {
-            var res = buf.toString('utf8')
-            var exp = _.range(0, generateRows + 1).join('\n') + '\n'
+            const res = buf.toString('utf8')
+            const exp = _.range(0, generateRows + 1).join('\n') + '\n'
             assert.equal(res, exp, 'clientReuse: sent & received buffer should be equal')
             currentRunNumber++
             callback()
@@ -158,7 +158,7 @@ describe('copy-to', () => {
     })
 
     it('client can be reused for another query', (done) => {
-      var client = getClient()
+      const client = getClient()
 
       // uncomment the code to see pausing and resuming of the connection stream
 
@@ -182,7 +182,7 @@ describe('copy-to', () => {
         })
       }
 
-      var writable = new Writable({
+      const writable = new Writable({
         write: function (chunk, encoding, cb) {
           cb()
         },
@@ -191,8 +191,8 @@ describe('copy-to', () => {
         setTimeout(testConnection, 30) // test if the connection didn't drop flowing state
       })
 
-      var sql = 'COPY (SELECT 1) TO STDOUT'
-      var stream = client.query(copy(sql, { highWaterMark: 1 }))
+      const sql = 'COPY (SELECT 1) TO STDOUT'
+      const stream = client.query(copy(sql, { highWaterMark: 1 }))
       stream.pipe(writable)
     })
 
@@ -223,10 +223,10 @@ describe('copy-to', () => {
       return new Promise((resolve, reject) => {
         const parser = csvModule(csvModuleOpts)
         parser.on('error', reject)
-        var stream = parser.pipe(concat({ encoding: 'object' }, resolve))
+        parser.pipe(concat({ encoding: 'object' }, resolve))
 
         for (const inputByteArray of inputByteArrays) {
-          let inputBuffer = Buffer.from(inputByteArray)
+          const inputBuffer = Buffer.from(inputByteArray)
           parser.write(inputBuffer)
         }
         parser.end()
@@ -304,7 +304,7 @@ describe('copy-to', () => {
         pgClient.query(copyToStream)
 
         for (const inputByteArray of inputByteArrays) {
-          let inputBuffer = Buffer.from(inputByteArray)
+          const inputBuffer = Buffer.from(inputByteArray)
           pgStream.write(inputBuffer)
         }
 
@@ -319,8 +319,8 @@ describe('copy-to', () => {
     }
 
     it('forwards passed options to parent Transform stream', () => {
-      var sql = 'COPY (SELECT * FROM generate_series(0, 10)) TO STDOUT'
-      var stream = copy(sql, { highWaterMark: 10 })
+      const sql = 'COPY (SELECT * FROM generate_series(0, 10)) TO STDOUT'
+      const stream = copy(sql, { highWaterMark: 10 })
       assert.equal(stream._readableState.highWaterMark, 10, 'Client should have been set with a correct highWaterMark.')
     })
 

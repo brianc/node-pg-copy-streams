@@ -3,7 +3,6 @@
 const assert = require('assert')
 
 const async = require('async')
-const concat = require('concat-stream')
 const _ = require('lodash')
 const pg = require('pg')
 

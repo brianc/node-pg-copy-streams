@@ -223,7 +223,7 @@ describe('copy-to', () => {
       return new Promise((resolve, reject) => {
         const parser = csvModule(csvModuleOpts)
         parser.on('error', reject)
-        const stream = parser.pipe(concat({ encoding: 'object' }, resolve))
+        parser.pipe(concat({ encoding: 'object' }, resolve))
 
         for (const inputByteArray of inputByteArrays) {
           const inputBuffer = Buffer.from(inputByteArray)

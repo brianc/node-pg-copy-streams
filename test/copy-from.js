@@ -2,7 +2,6 @@
 
 const assert = require('assert')
 
-const concat = require('concat-stream')
 const _ = require('lodash')
 const pg = require('pg')
 

@@ -29,35 +29,41 @@ describe('binary', () => {
     }
     let firstChunk = true
     let byteaLength = 0
-    copyToStream
-      .pipe(
-        new Transform({
-          transform: function (chunk, enc, cb) {
-            if (firstChunk) {
-              // cf binary protocol description on https://www.postgresql.org/docs/10/sql-copy.html
-              assert(chunk.length >= 25)
-              assert.deepEqual(
-                chunk.slice(0, 11),
-                Buffer.from([0x50, 0x47, 0x43, 0x4f, 0x50, 0x59, 0x0a, 0xff, 0x0d, 0x0a, 0x00]),
-                'COPY Signature should match'
-              )
-              assert.equal(chunk.readUInt32BE(11), 0, 'Flags should match')
-              assert.equal(chunk.readUInt32BE(11 + 4), 0, 'Header Extension area length should match')
-              assert.equal(chunk.readUInt16BE(15 + 4), 1, 'Number of fields in tuple should be 1')
-              byteaLength = chunk.readUInt32BE(19 + 2)
-              chunk = chunk.slice(21 + 4)
-              firstChunk = false
-            }
-            if (byteaLength) {
-              chunk = chunk.slice(0, byteaLength)
-              byteaLength -= chunk.length
-              this.push(chunk)
-            }
-            cb()
-          },
-        })
-      )
-      .pipe(concat({ encoding: 'buffer' }, assertResult))
+    const ContentFilter = new Transform({
+      transform: function (chunk, enc, cb) {
+        if (firstChunk) {
+          // cf binary protocol description on https://www.postgresql.org/docs/10/sql-copy.html
+          try {
+            assert(chunk.length >= 25)
+            assert.deepEqual(
+              chunk.slice(0, 11),
+              Buffer.from([0x50, 0x47, 0x43, 0x4f, 0x50, 0x59, 0x0a, 0xff, 0x0d, 0x0a, 0x00]),
+              'COPY Signature should match'
+            )
+            assert.equal(chunk.readUInt32BE(11), 0, 'Flags should match')
+            assert.equal(chunk.readUInt32BE(11 + 4), 0, 'Header Extension area length should match')
+            assert.equal(chunk.readUInt16BE(15 + 4), 1, 'Number of fields in tuple should be 1')
+          } catch (err) {
+            return cb(err)
+          }
+          byteaLength = chunk.readUInt32BE(19 + 2)
+          chunk = chunk.slice(21 + 4)
+          firstChunk = false
+        }
+        if (byteaLength) {
+          chunk = chunk.slice(0, byteaLength)
+          byteaLength -= chunk.length
+          this.push(chunk)
+        }
+        cb()
+      },
+    })
+    ContentFilter.on('error', (err) => {
+      client.end()
+      done(err)
+    })
+
+    copyToStream.pipe(ContentFilter).pipe(concat({ encoding: 'buffer' }, assertResult))
   })
 
   it('table-2-table binary copy should work', (done) => {

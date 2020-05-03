@@ -68,10 +68,10 @@ class CopyStreamQuery extends Transform {
       if (PG_MESSAGE === this._state) {
         if (this._unreadMessageContentLength > 0 && this._buffer.size > 0) {
           const n = Math.min(this._buffer.size, this._unreadMessageContentLength)
-          const copyDataChunk = this._buffer.take(n)
+          const messageContentChunk = this._buffer.take(n)
           this._unreadMessageContentLength -= n
           if (this._code === code.CopyData) {
-            this._copyDataChunks.push(copyDataChunk)
+            this._copyDataChunks.push(messageContentChunk)
           }
         }
 

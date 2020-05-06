@@ -6,7 +6,7 @@ const async = require('async')
 const _ = require('lodash')
 const pg = require('pg')
 const concat = require('concat-stream')
-const { Transform } = require('stream')
+const { Transform, Writable } = require('stream')
 
 const { from, to } = require('../')
 
@@ -17,19 +17,10 @@ describe('binary', () => {
     return client
   }
 
-  it('extract bytea field', (done) => {
-    const power = 17
-    const sql = "COPY (select (repeat('-', CAST(2^" + power + ' AS int)))::bytea) TO STDOUT BINARY'
-    const client = getClient()
-    const copyToStream = client.query(to(sql))
-    const assertResult = (buf) => {
-      client.end()
-      assert.deepEqual(buf, Buffer.alloc(Math.pow(2, power), '-'))
-      done()
-    }
+  const LastFieldStream = function () {
     let firstChunk = true
     let byteaLength = 0
-    const ContentFilter = new Transform({
+    const Streamer = new Transform({
       transform: function (chunk, enc, cb) {
         if (firstChunk) {
           // cf binary protocol description on https://www.postgresql.org/docs/10/sql-copy.html
@@ -58,6 +49,71 @@ describe('binary', () => {
         cb()
       },
     })
+    return Streamer
+  }
+
+  it('low copy-to memory usage during large bytea streaming', (done) => {
+    const power = 26
+    const sql = "COPY (select (repeat('-', CAST(2^" + power + ' AS int)))::bytea) TO STDOUT BINARY'
+    const client = getClient()
+
+    const query = to(sql)
+    const lfs = LastFieldStream()
+    const noop = new Writable({
+      write(chunk, enc, cb) {
+        if (Math.random() < 0.02) {
+          global.gc()
+          const memNow = process.memoryUsage().external / 1024 / 1024
+          try {
+            const memLimit = 20 /*MB*/
+            const memDiff = Math.abs(memNow - memStart)
+            if (memDiff > memLimit) {
+              global.gc()
+            }
+            assert(
+              memDiff < memLimit,
+              'copy of ' +
+                Math.pow(2, power - 20) +
+                'MB should need less than ' +
+                memLimit +
+                'MB of memoryUsage().external (' +
+                Math.round(memDiff) +
+                'MB observed)'
+            )
+          } catch (err) {
+            cb(err)
+          }
+        }
+        setImmediate(cb)
+      },
+    })
+
+    global.gc(true)
+    const memStart = process.memoryUsage().external / 1024 / 1024
+    const stream = client.query(query).pipe(lfs).pipe(noop)
+
+    stream.on('error', (err) => {
+      client.end()
+      done(err)
+    })
+
+    stream.on('finish', () => {
+      client.end()
+      done()
+    })
+  })
+
+  it('extract bytea field', (done) => {
+    const power = 25
+    const sql = "COPY (select (repeat('-', CAST(2^" + power + ' AS int)))::bytea) TO STDOUT BINARY'
+    const client = getClient()
+    const copyToStream = client.query(to(sql))
+    const assertResult = (buf) => {
+      client.end()
+      assert.deepEqual(buf, Buffer.alloc(Math.pow(2, power), '-'))
+      done()
+    }
+    const ContentFilter = LastFieldStream()
     ContentFilter.on('error', (err) => {
       client.end()
       done(err)

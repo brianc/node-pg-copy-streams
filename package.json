@@ -4,7 +4,7 @@
   "description": "Low-Level COPY TO and COPY FROM streams for PostgreSQL in JavaScript using",
   "main": "index.js",
   "scripts": {
-    "test": "npm run lint && mocha",
+    "test": "npm run lint && mocha --expose-gc",
     "lint": "[ \"$(node -v | cut -d. -f1)\" = \"v8\" ] || eslint '**/*.{js,ts}'"
   },
   "repository": {

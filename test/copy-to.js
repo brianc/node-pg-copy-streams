@@ -71,6 +71,19 @@ describe('copy-to', () => {
       })
     })
 
+    it('correcly handle error in sql request', (done) => {
+      assertCopyToResult('COPY --wrong-- TO STDOUT', (err, chunks, result, stream) => {
+        assert.notEqual(err, null)
+        const expectedMessage = 'syntax error at end of input'
+        assert.notEqual(
+          err.toString().indexOf(expectedMessage),
+          -1,
+          'Error message should mention reason for query failure.'
+        )
+        done()
+      })
+    })
+
     it('internal postgres error ends copy and emits error', (done) => {
       assertCopyToResult('COPY (SELECT pg_sleep(10)) TO STDOUT', (err, chunks, result, stream) => {
         assert.notEqual(err, null)
@@ -288,6 +301,7 @@ describe('copy-to', () => {
       return new Promise((resolve, reject) => {
         // mock a pg client/server
         const pgStream = new PassThrough()
+        pgStream.on('data', () => {})
         const pgConnection = {
           stream: pgStream,
           query: () => {},

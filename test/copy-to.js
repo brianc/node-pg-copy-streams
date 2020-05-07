@@ -272,6 +272,7 @@ describe('copy-to', () => {
         })
 
         it('works with finished()', (done) => {
+          if (!finished) return done()
           createCopyToQuery(successfulSql, (client, copyToStream) => {
             copyToStream.resume()
             finished(copyToStream, (err) => {
@@ -283,6 +284,7 @@ describe('copy-to', () => {
         })
 
         it('works with pipeline()', (done) => {
+          if (!pipeline) return done()
           createCopyToQuery(successfulSql, (client, copyToStream) => {
             const pt = new PassThrough()
             pipeline(copyToStream, pt, (err) => {
@@ -322,6 +324,7 @@ describe('copy-to', () => {
         })
 
         it('works with finished()', (done) => {
+          if (!finished) return done()
           createCopyToQuery(syntaxErrorSql, (client, copyToStream) => {
             copyToStream.resume()
             finished(copyToStream, (err) => {
@@ -333,6 +336,7 @@ describe('copy-to', () => {
         })
 
         it('works with pipeline()', (done) => {
+          if (!pipeline) return done()
           createCopyToQuery(syntaxErrorSql, (client, copyToStream) => {
             pipeline(copyToStream, new PassThrough(), (err) => {
               assert.ok(err)
@@ -386,6 +390,7 @@ describe('copy-to', () => {
         })
 
         it('works with finished()', (done) => {
+          if (!finished) return done()
           createInternalErrorCopyToQuery((client, copyToStream) => {
             copyToStream.resume()
             finished(copyToStream, (err) => {
@@ -397,6 +402,7 @@ describe('copy-to', () => {
         })
 
         it('works with pipeline()', (done) => {
+          if (!pipeline) return done()
           createInternalErrorCopyToQuery((client, copyToStream) => {
             pipeline(copyToStream, new PassThrough(), (err) => {
               assert.ok(err)

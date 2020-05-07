@@ -255,11 +255,30 @@ describe('copy-to', () => {
       describe('successful stream', () => {
         const successfulSql = `COPY (SELECT 1) TO STDOUT`
 
+        it("emits 1 'finish'", (done) => {
+          assertCopyToResult(successfulSql, (err, chunks, result, stream) => {
+            assert.ifError(err)
+            assert.equal(stream.emits['finish'].length, 1)
+            done()
+          })
+        })
+
         it("emits 1 'end'", (done) => {
           assertCopyToResult(successfulSql, (err, chunks, result, stream) => {
             assert.ifError(err)
             assert.equal(stream.emits['end'].length, 1)
             done()
+          })
+        })
+
+        it('works with finished()', (done) => {
+          createCopyToQuery(successfulSql, (client, copyToStream) => {
+            copyToStream.resume()
+            finished(copyToStream, (err) => {
+              assert.ifError(err)
+              client.end()
+              done()
+            })
           })
         })
 

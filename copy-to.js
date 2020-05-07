@@ -132,7 +132,7 @@ class CopyStreamQuery extends Transform {
 
     if (done) {
       this._detach()
-      this.push(null)
+      this.end()
       this._cleanup()
     }
 

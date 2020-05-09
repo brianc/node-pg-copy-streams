@@ -64,7 +64,7 @@ suite
           const seq = inStream()
           const from = c.query(copy('COPY plugnumber FROM STDIN'))
           seq.pipe(from)
-          from.on('end', function () {
+          from.on('finish', function () {
             c.end()
             d.resolve()
           })

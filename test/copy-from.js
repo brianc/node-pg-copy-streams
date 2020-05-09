@@ -14,18 +14,12 @@ const client = function () {
 }
 
 describe('copy-from', () => {
-  it('test stream unpipe', (done) => {
+  it('test stream finish', (done) => {
     const fromClient = client()
     fromClient.query('CREATE TEMP TABLE numbers(num int)')
 
     const stream = fromClient.query(copy('COPY numbers FROM STDIN'))
-    let onEndCalled = false
-    fromClient.connection.stream.on('unpipe', function (src) {
-      assert.equal(src, stream)
-      assert(!onEndCalled)
-    })
-    stream.on('end', function () {
-      onEndCalled = true
+    stream.on('finish', function () {
       fromClient.end()
       done()
     })
@@ -42,7 +36,7 @@ describe('copy-from', () => {
   })
 
   it('test range', (done) => {
-    const top = 1000
+    const top = 10000
     const fromClient = client()
     fromClient.query('CREATE TEMP TABLE numbers(num int, bigger_num int)')
 
@@ -52,7 +46,7 @@ describe('copy-from', () => {
       stream.write(Buffer.from('' + i + '\t' + i * 10 + '\n'))
     }
     stream.end()
-    stream.on('end', function () {
+    stream.on('finish', function () {
       fromClient.query('SELECT COUNT(*) FROM numbers', function (err, res) {
         assert.ifError(err)
         assert.equal(res.rows[0].count, top, 'expected ' + top + ' rows but got ' + res.rows[0].count)
@@ -75,7 +69,7 @@ describe('copy-from', () => {
     const txt = 'COPY numbers FROM STDIN'
     const stream = fromClient.query(copy(txt))
     let count = 0
-    stream.on('end', function () {
+    stream.on('finish', function () {
       count++
       assert(count == 1, '`end` Event was triggered ' + count + ' times')
       if (count == 1) {
@@ -95,7 +89,7 @@ describe('copy-from', () => {
     const card = 100000
     const runStream = function () {
       const stream = fromClient.query(copy(txt))
-      stream.on('end', function () {
+      stream.on('finish', function () {
         count++
         if (count < countMax) {
           runStream()

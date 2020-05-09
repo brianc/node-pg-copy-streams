@@ -4,7 +4,7 @@ const assert = require('assert')
 
 const _ = require('lodash')
 const concat = require('concat-stream')
-const { Writable } = require('stream')
+const { Writable, finished, pipeline } = require('stream')
 const pg = require('pg')
 const { PassThrough } = require('stream')
 const { Transform } = require('stream')
@@ -30,23 +30,37 @@ describe('copy-to', () => {
       })
     }
 
-    function assertCopyToResult(sql, assertFn) {
+    function createCopyToQuery(sql, callback) {
       const client = getClient()
+      const copyToStream = client.query(copy(sql))
+      callback(client, copyToStream)
+    }
+
+    function spyOnEmitCalls(copyToStream) {
+      copyToStream.emits = {}
+      const realEmit = copyToStream.emit
+      copyToStream.emit = function () {
+        const [eventName, ...args] = arguments
+        if (!copyToStream.emits[eventName]) {
+          copyToStream.emits[eventName] = []
+        }
+        copyToStream.emits[eventName].push(args)
+        realEmit.apply(this, arguments)
+      }
+    }
+
+    function processCopyToStreamForAssertFn(client, copyToStream, assertFn) {
       const chunks = []
-      let hasCompleted = false
+      spyOnEmitCalls(copyToStream)
 
       function complete(err, chunks, result, stream) {
-        // both 'error' and 'end' events may fire, guard so assertFn is called only once
-        if (!hasCompleted) {
-          hasCompleted = true
-          client.end()
-          assertFn(err, chunks, result, stream)
-        }
+        client.end()
+        assertFn(err, chunks, result, stream)
       }
 
-      const copyToStream = client.query(copy(sql))
-
-      copyToStream.on('error', complete)
+      copyToStream.on('error', (err) => {
+        complete(err, chunks, null, copyToStream)
+      })
       copyToStream.on('end', () => {
         const result = Buffer.concat(chunks).toString()
         complete(null, chunks, result, copyToStream)
@@ -61,12 +75,31 @@ describe('copy-to', () => {
       )
     }
 
+    function assertCopyToResult(sql, assertFn) {
+      createCopyToQuery(sql, (client, copyToStream) => {
+        processCopyToStreamForAssertFn(client, copyToStream, assertFn)
+      })
+    }
+
     it('provides row count', (done) => {
       const top = 100
       const sql = 'COPY (SELECT * from generate_series(0, ' + (top - 1) + ')) TO STDOUT'
       assertCopyToResult(sql, (err, chunks, result, stream) => {
         assert.ifError(err)
         assert.equal(stream.rowCount, top, 'should have rowCount ' + top + ' but got ' + stream.rowCount)
+        done()
+      })
+    })
+
+    it('correcly handle error in sql request', (done) => {
+      assertCopyToResult('COPY --wrong-- TO STDOUT', (err, chunks, result, stream) => {
+        assert.notEqual(err, null)
+        const expectedMessage = 'syntax error at end of input'
+        assert.notEqual(
+          err.toString().indexOf(expectedMessage),
+          -1,
+          'Error message should mention reason for query failure.'
+        )
         done()
       })
     })
@@ -84,9 +117,10 @@ describe('copy-to', () => {
       })
 
       setTimeout(() => {
-        executeSql(
-          "SELECT pg_cancel_backend(pid) FROM pg_stat_activity WHERE query ~ 'pg_sleep' AND NOT query ~ 'pg_cancel_backend'"
-        )
+        executeSql(`SELECT pg_cancel_backend(pid) 
+                      FROM pg_stat_activity 
+                     WHERE query ~ 'pg_sleep' 
+                       AND NOT query ~ 'pg_cancel_backend'`)
       }, 20)
     })
 
@@ -216,6 +250,169 @@ describe('copy-to', () => {
         done()
       })
     })
+
+    describe('stream compliance', () => {
+      describe('successful stream', () => {
+        const successfulSql = `COPY (SELECT 1) TO STDOUT`
+
+        it("emits 1 'finish'", (done) => {
+          assertCopyToResult(successfulSql, (err, chunks, result, stream) => {
+            assert.ifError(err)
+            assert.equal(stream.emits['finish'].length, 1)
+            done()
+          })
+        })
+
+        it("emits 1 'end'", (done) => {
+          assertCopyToResult(successfulSql, (err, chunks, result, stream) => {
+            assert.ifError(err)
+            assert.equal(stream.emits['end'].length, 1)
+            done()
+          })
+        })
+
+        it('works with finished()', (done) => {
+          if (!finished) return done()
+          createCopyToQuery(successfulSql, (client, copyToStream) => {
+            copyToStream.resume()
+            finished(copyToStream, (err) => {
+              assert.ifError(err)
+              client.end()
+              done()
+            })
+          })
+        })
+
+        it('works with pipeline()', (done) => {
+          if (!pipeline) return done()
+          createCopyToQuery(successfulSql, (client, copyToStream) => {
+            const pt = new PassThrough()
+            pipeline(copyToStream, pt, (err) => {
+              assert.ifError(err)
+              client.end()
+              done()
+            })
+          })
+        })
+      })
+
+      describe('erroneous stream (syntax error)', () => {
+        const syntaxErrorSql = `COPY (SELECT INVALID SYNTAX) TO STDOUT`
+
+        it("emits 0 'finish'", (done) => {
+          assertCopyToResult(syntaxErrorSql, (err, chunks, result, stream) => {
+            assert.ok(err)
+            assert.equal(stream.emits['finish'], undefined)
+            done()
+          })
+        })
+
+        it("emits 0 'end'", (done) => {
+          assertCopyToResult(syntaxErrorSql, (err, chunks, result, stream) => {
+            assert.ok(err)
+            assert.equal(stream.emits['end'], undefined)
+            done()
+          })
+        })
+
+        it("emits 1 'error'", (done) => {
+          assertCopyToResult(syntaxErrorSql, (err, chunks, result, stream) => {
+            assert.ok(err)
+            assert.equal(stream.emits['error'].length, 1)
+            done()
+          })
+        })
+
+        it('works with finished()', (done) => {
+          if (!finished) return done()
+          createCopyToQuery(syntaxErrorSql, (client, copyToStream) => {
+            copyToStream.resume()
+            finished(copyToStream, (err) => {
+              assert.ok(err)
+              client.end()
+              done()
+            })
+          })
+        })
+
+        it('works with pipeline()', (done) => {
+          if (!pipeline) return done()
+          createCopyToQuery(syntaxErrorSql, (client, copyToStream) => {
+            pipeline(copyToStream, new PassThrough(), (err) => {
+              assert.ok(err)
+              client.end()
+              done()
+            })
+          })
+        })
+      })
+
+      describe('erroneous stream (internal error)', () => {
+        function createInternalErrorCopyToQuery(callback) {
+          createCopyToQuery('COPY (SELECT pg_sleep(10)) TO STDOUT', callback)
+
+          setTimeout(() => {
+            executeSql(`SELECT pg_cancel_backend(pid) 
+                          FROM pg_stat_activity 
+                         WHERE query ~ 'pg_sleep' 
+                           AND NOT query ~ 'pg_cancel_backend'`)
+          }, 20)
+        }
+
+        function assertInternalErrorCopyToResult(assertFn) {
+          createInternalErrorCopyToQuery((client, copyToStream) => {
+            processCopyToStreamForAssertFn(client, copyToStream, assertFn)
+          })
+        }
+
+        it("emits 0 'finish'", (done) => {
+          assertInternalErrorCopyToResult((err, chunks, result, stream) => {
+            assert.ok(err)
+            assert.equal(stream.emits['finish'], undefined)
+            done()
+          })
+        })
+
+        it("emits 0 'end'", (done) => {
+          assertInternalErrorCopyToResult((err, chunks, result, stream) => {
+            assert.ok(err)
+            assert.equal(stream.emits['end'], undefined)
+            done()
+          })
+        })
+
+        it("emits 1 'error'", (done) => {
+          assertInternalErrorCopyToResult((err, chunks, result, stream) => {
+            assert.ok(err)
+            assert.equal(stream.emits['error'].length, 1)
+            done()
+          })
+        })
+
+        it('works with finished()', (done) => {
+          if (!finished) return done()
+          createInternalErrorCopyToQuery((client, copyToStream) => {
+            copyToStream.resume()
+            finished(copyToStream, (err) => {
+              assert.ok(err)
+              client.end()
+              done()
+            })
+          })
+        })
+
+        it('works with pipeline()', (done) => {
+          if (!pipeline) return done()
+          createInternalErrorCopyToQuery((client, copyToStream) => {
+            pipeline(copyToStream, new PassThrough(), (err) => {
+              assert.ok(err)
+              client.end()
+              done()
+            })
+          })
+        })
+      })
+    })
   })
 
   describe('integration tests (csv parsers)', () => {
@@ -288,6 +485,7 @@ describe('copy-to', () => {
       return new Promise((resolve, reject) => {
         // mock a pg client/server
         const pgStream = new PassThrough()
+        pgStream.on('data', () => {})
         const pgConnection = {
           stream: pgStream,
           query: () => {},

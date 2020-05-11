@@ -33,7 +33,7 @@ pool.connect(function (err, client, done) {
 })
 ```
 
-_important_: When copying data out of postgresql, postgresql will chunk the data on 64kB boundaries. You should expect rows to be cut across the boundaries of these chunks (the end of a chunk will not always match the end of a row). If you are piping the csv output of postgres into a file, this might not be a problem. But if you are trying to analyse the csv output on-the-fly, you need to make sure that you correcly discover the lines of the csv output across the chunk boundaries. We are not recommending any specific streaming csv parser but `csv-parser` and `csv-parse` seem to correctly handle this.
+_Important_: When copying data out of postgresql, postgresql will chunk the data on 64kB boundaries. You should expect rows to be cut across the boundaries of these chunks (the end of a chunk will not always match the end of a row). If you are piping the csv output of postgres into a file, this might not be a problem. But if you are trying to analyse the csv output on-the-fly, you need to make sure that you correcly discover the lines of the csv output across the chunk boundaries. We are not recommending any specific streaming csv parser but `csv-parser` and `csv-parse` seem to correctly handle this.
 
 ### pipe from a file to table
 
@@ -49,12 +49,12 @@ pool.connect(function (err, client, done) {
   var fileStream = fs.createReadStream('some_file.tsv')
   fileStream.on('error', done)
   stream.on('error', done)
-  stream.on('end', done)
+  stream.on('finish', done)
   fileStream.pipe(stream)
 })
 ```
 
-_Important_: When copying data into postgresql, even if `pg-copy-streams.from` is used as a Writable (via `pipe`), you should not listen for the 'finish' event and expect that the COPY command has already been correctly acknowledged by the database. Internally, a duplex stream is used to pipe the data into the database connection and the COPY command should be considered complete only when the 'end' event is triggered.
+_Note_: In version prior to 4.0.0, when copying data into postgresql, it was necessary to wait for the 'end' event of `pg-copy-streams.from` to correctly detect the end of the COPY operation. This was necessary due to the internals of the module but non-standard. This is not true for versions including and after 4.0.0. The end of the COPY operation must now be detected via the standard 'finish' event.
 
 ## install
 
@@ -107,7 +107,20 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
 ## changelog
 
-### version 3.x - not yet published
+### version 4.x - not yet published
+
+### version 4.0.0 - published 2020-05-11
+
+This version's major change is a modification in the COPY FROM implementation. In previous version, copy-from was internally designed as a `Transform` duplex stream. The user-facing API was writable, and the readable side of the `Transform` was piped into the postgres connection stream to copy the data inside the database.
+This led to an issue because `Transform` was emitting its 'finish' too early after the writable side was ended. Postgres had not yet read all the data on the readable side and had not confirmed that the COPY operation was finished. The recommendation was to wait for the 'end' event on the readable side which correcly detected the end of the COPY operation and the fact that the pg connection was ready for new queries.
+This recommendation worked ok but this way of detecting the end of a writable is not standard and was leading to different issues (interaction with the `finished` and `pipeline` API for example)
+The new copy-from implementation extends writable and now emits 'finish' with the correct timing : after the COPY operation and after the postgres connection has reached the readyForQuery state.
+Another big change in this version is that copy-to now shortcuts the core `pg` parsing during the COPY operation. This avoids double-parsing and avoids the fact that `pg` buffers whole postgres protocol messages.
+
+- Rewrite copy-from in order to have it extend `Writable` instead of `Transform`
+- Modify copy-to to shortcut the pg protocol parser during the COPY operation
+- Add Stream compliance tests for copy-to and copy-from
+
 
 ### version 3.0.0 - published 2020-05-02
 

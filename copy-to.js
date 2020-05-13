@@ -4,7 +4,7 @@ module.exports = function (txt, options) {
   return new CopyStreamQuery(txt, options)
 }
 
-const { Transform } = require('stream')
+const { Readable } = require('stream')
 const assert = require('assert')
 const BufferList = require('obuf')
 const code = require('./message-formats')
@@ -14,7 +14,7 @@ const PG_CODE = 0
 const PG_LENGTH = 1
 const PG_MESSAGE = 2
 
-class CopyStreamQuery extends Transform {
+class CopyStreamQuery extends Readable {
   constructor(text, options) {
     super(options)
     this.text = text
@@ -24,7 +24,9 @@ class CopyStreamQuery extends Transform {
     this._unreadMessageContentLength = 0
     this._copyDataChunks = new BufferList()
     this._pgDataHandler = null
-    this._errorCallback = null
+    this._drained = false
+    this._forwarding = false
+    this._onReadableEvent = this._onReadable.bind(this)
   }
 
   submit(connection) {
@@ -39,13 +41,16 @@ class CopyStreamQuery extends Transform {
     assert(pgDataListeners.length == 1)
     this._pgDataHandler = pgDataListeners.pop()
     connectionStream.removeListener('data', this._pgDataHandler)
-    connectionStream.pipe(this)
+    connectionStream.pause()
+    this._forward()
+    connectionStream.on('readable', this._onReadableEvent)
   }
 
   _detach() {
     const connectionStream = this.connection.stream
     const unreadBuffer = this._buffer.take(this._buffer.size)
-    connectionStream.unpipe(this)
+    //connectionStream.unpipe(this)
+    connectionStream.removeListener('readable', this._onReadableEvent)
     connectionStream.addListener('data', this._pgDataHandler)
     this._pgDataHandler(unreadBuffer)
 
@@ -61,11 +66,32 @@ class CopyStreamQuery extends Transform {
     this._buffer = null
     this._copyDataChunks = null
     this._pgDataHandler = null
-    this._errorCallback = null
+    this._onReadableEvent = null
   }
 
-  _transform(chunk, enc, cb) {
+  _onReadable() {
+    this._forward()
+  }
+
+  _read() {
+    this._drained = true
+    this._forward()
+  }
+
+  _forward() {
+    if (this._forwarding || !this._drained || !this.connection) return
+    this._forwarding = true
+    const connectionStream = this.connection.stream
+    let chunk
+    while (this._drained && (chunk = connectionStream.read()) !== null) {
+      this._drained = this._parse(chunk)
+    }
+    this._forwarding = false
+  }
+
+  _parse(chunk) {
     let done = false
+    let drained = true
     this._buffer.push(chunk)
 
     while (!done && this._buffer.size > 0) {
@@ -76,7 +102,6 @@ class CopyStreamQuery extends Transform {
           // ErrorResponse Interception
           // We must let pg parse future messages and handle their consequences on
           // the ActiveQuery
-          this._errorCallback = cb
           this._detach()
           return
         }
@@ -127,20 +152,20 @@ class CopyStreamQuery extends Transform {
     // flush data if any data has been captured
     const len = this._copyDataChunks.size
     if (len > 0) {
-      this.push(this._copyDataChunks.take(len))
+      drained = this.push(this._copyDataChunks.take(len))
     }
 
     if (done) {
       this._detach()
-      this.end()
+      this.push(null)
       this._cleanup()
     }
 
-    cb()
+    return drained
   }
 
-  handleError(e) {
-    this._errorCallback(e)
+  handleError(err) {
+    this.emit('error', err)
     this._cleanup()
   }
 

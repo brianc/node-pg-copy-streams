@@ -54,7 +54,7 @@ pool.connect(function (err, client, done) {
 })
 ```
 
-_Note_: In version prior to 4.0.0, when copying data into postgresql, it was necessary to wait for the 'end' event of `pg-copy-streams.from` to correctly detect the end of the COPY operation. This was necessary due to the internals of the module but non-standard. This is not true for versions including and after 4.0.0. The end of the COPY operation must now be detected via the standard 'finish' event.
+_Note_: In version prior to 4.0.0, when copying data into postgresql, it was necessary to wait for the 'end' event of `pg-copy-streams.from` to correctly detect the end of the COPY operation. This was necessary due to the internals of the module but non-standard. This is not true for versions including and after 4.0.0. The end of the COPY operation must now be detected via the standard 'finish' event. **Users of 4.0.0+ should not wait for the 'end' event because it is not fired anymore.**
 
 ## install
 
@@ -108,6 +108,13 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 ## changelog
 
 ### version 4.x - not yet published
+
+### version 5.0.0 - published 2020-05-14
+
+This version's major change is a modification in the COPY TO implementation. The new implementation now extends `Readable` while previous version where extending `Transform`. This should not have an effect on how users use the module but was considered to justify a major version number because even if the test suite coverage is wide, it could have an impact on the streaming dynamics in certain edge cases that are not yet captured by the tests.
+
+- Rewrite copy-to in order to have it extend `Readable` instead of `Transform`
+
 
 ### version 4.0.0 - published 2020-05-11
 

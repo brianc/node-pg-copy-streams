@@ -255,10 +255,10 @@ describe('copy-to', () => {
       describe('successful stream', () => {
         const successfulSql = `COPY (SELECT 1) TO STDOUT`
 
-        it("emits 1 'finish' (writable stream)", (done) => {
+        it("emits 0 'finish' (readable stream)", (done) => {
           assertCopyToResult(successfulSql, (err, chunks, result, stream) => {
             assert.ifError(err)
-            assert.equal(stream.emits['finish'].length, 1)
+            assert.equal(stream.emits['finish'], undefined)
             done()
           })
         })

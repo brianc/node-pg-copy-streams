@@ -107,7 +107,7 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
 ## changelog
 
-### version 4.x - not yet published
+### version 5.x - not yet published
 
 ### version 5.0.0 - published 2020-05-14
 

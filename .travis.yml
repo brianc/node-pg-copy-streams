@@ -13,3 +13,6 @@ before_install:
   - npm install npm --global
 env:
   - PGUSER=postgres PGDATABASE=postgres
+
+before_script:
+  - sudo bash -c "echo 'host replication all    127.0.0.1/32  trust' >> /etc/postgresql/$PGVERSION/main/pg_hba.conf"

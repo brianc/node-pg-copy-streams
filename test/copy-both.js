@@ -1,7 +1,5 @@
 'use strict'
 
-const assert = require('assert')
-
 const pg = require('pg')
 const async = require('async')
 

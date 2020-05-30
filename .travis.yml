@@ -22,4 +22,5 @@ before_script:
   - sudo bash -c "echo 'host replication all    127.0.0.1/32  trust' >> /etc/postgresql/$PGVERSION/main/pg_hba.conf"
   - sudo bash -c "echo >> /etc/postgresql/$PGVERSION/main/postgresql.conf"
   - sudo bash -c "echo 'max_wal_senders = 1' >> /etc/postgresql/$PGVERSION/main/postgresql.conf"
-  - sudo systemctl postgresql restart
+  - sudo service postgresql stop $PGVERSION
+  - sudo service postgresql start $PGVERSION

@@ -3,6 +3,9 @@ node_js:
   - '8'
   - '10'
   - '12'
+
+
+
 addons:
   postgresql: '9.6'
 
@@ -11,8 +14,9 @@ services:
 
 before_install:
   - npm install npm --global
+
 env:
-  - PGUSER=postgres PGDATABASE=postgres
+  - PGVERSION=9.6 PGUSER=postgres PGDATABASE=postgres
 
 before_script:
   - sudo bash -c "echo 'host replication all    127.0.0.1/32  trust' >> /etc/postgresql/$PGVERSION/main/pg_hba.conf"

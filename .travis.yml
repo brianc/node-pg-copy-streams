@@ -21,5 +21,9 @@ env:
 before_script:
   - sudo bash -c "echo 'host replication all    127.0.0.1/32  trust' >> /etc/postgresql/$PGVERSION/main/pg_hba.conf"
   - sudo bash -c "cat /etc/postgresql/$PGVERSION/main/postgresql.conf"
+  - sudo bash -c "ls -al /etc/postgresql/$PGVERSION/main/"
+  - sudo bash -c "sed -i 's/#max_wal_senders = 0/max_wal_senders = 1/g' /etc/postgresql/$PGVERSION/main/postgresql.conf"
+  - sudo bash -c "cat /etc/postgresql/$PGVERSION/main/postgresql.conf"
+  - sudo bash -c "ls -al /etc/postgresql/$PGVERSION/main/"
   - sudo service postgresql stop $PGVERSION
   - sudo service postgresql start $PGVERSION

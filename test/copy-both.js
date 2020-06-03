@@ -148,6 +148,9 @@ describe('copy-both', () => {
     }).timeout(5000)
 */
     it('should receive messages on the copyOut channel', (done) => {
+      if (!pipeline) return done() /* do not test under node 8 */
+      if (!finished) return done() /* do not test under node 8 */
+
       const client = getClient({ replication: 'database' }, (err) => {
         if (err) return done(err)
 
@@ -168,7 +171,7 @@ describe('copy-both', () => {
               copyBothStream.end()
             }
           })
-          pipeline(copyBothStream, copyDataHandler)
+          pipeline(copyBothStream, copyDataHandler, (err) => {})
           finished(copyBothStream, (err) => {
             client.end()
             done(err)

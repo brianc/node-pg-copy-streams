@@ -61,7 +61,7 @@ _Note_: In version prior to 4.0.0, when copying data into postgresql, it was nec
 This is a more advanded topic.
 Check the test/copy-both.js file for an example of how this can be used.
 
-_Note regarding logical decoding_: Parsers for logical decoding scenarios are easier to write when copy-both.js pushes chunks that are aligned on the copyData protocol frames. This is not the default mode of operation of copy-both.js in order to increase the streaming performance. If you need the pushed chunks to be alignes on copyData frames, use the `alignOnCopyDataFrame: true` option.
+_Note regarding logical decoding_: Parsers for logical decoding scenarios are easier to write when copy-both.js pushes chunks that are aligned on the copyData protocol frames. This is not the default mode of operation of copy-both.js in order to increase the streaming performance. If you need the pushed chunks to be aligned on copyData frames, use the `alignOnCopyDataFrame: true` option.
 
 
 ## install

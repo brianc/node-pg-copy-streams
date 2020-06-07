@@ -99,7 +99,7 @@ In order to launch the test suite, you need to have a local instance of postgres
 Since version 5.1.0 and the implementation of copy-both.js for logical decoding scenarios, your local postgres instance will need to be configured to accept replication scenarios :
 
 ```
-postgresq.conf
+postgresql.conf
   wal_level = logical
   max_wal_senders > 0
   max_replication_slots > 0

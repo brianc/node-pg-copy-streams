@@ -6,18 +6,18 @@ COPY FROM / COPY TO for node-postgres. Stream from one database to another, and 
 
 ## how? what? huh?
 
-Did you know the _all powerful_ PostgreSQL supports streaming binary data directly into and out of a table?
+Did you know that PostgreSQL supports streaming binary data directly into and out of a table?
 This means you can take your favorite CSV or TSV or whatever format file and pipe it directly into an existing PostgreSQL table.
 You can also take a table and pipe it directly to a file, another database, stdout, even to `/dev/null` if you're crazy!
 
 What this module gives you is a [Readable](http://nodejs.org/api/stream.html#stream_class_stream_readable) or [Writable](http://nodejs.org/api/stream.html#stream_class_stream_writable) stream directly into/out of a table in your database.
 This mode of interfacing with your table is _very fast_ and _very brittle_. You are responsible for properly encoding and ordering all your columns. If anything is out of place PostgreSQL will send you back an error. The stream works within a transaction so you wont leave things in a 1/2 borked state, but it's still good to be aware of.
 
-If you're not familiar with the feature (I wasn't either) you can read this for some good helps: http://www.postgresql.org/docs/9.3/static/sql-copy.html
+If you're not familiar with the feature (I wasn't either) you can read this for some good helps: http://www.postgresql.org/docs/9.6/static/sql-copy.html
 
 ## examples
 
-### pipe from a table to stdout
+### pipe from a table to stdout (copyOut - copy-to)
 
 ```js
 var { Pool } = require('pg')
@@ -35,7 +35,7 @@ pool.connect(function (err, client, done) {
 
 _Important_: When copying data out of postgresql, postgresql will chunk the data on 64kB boundaries. You should expect rows to be cut across the boundaries of these chunks (the end of a chunk will not always match the end of a row). If you are piping the csv output of postgres into a file, this might not be a problem. But if you are trying to analyse the csv output on-the-fly, you need to make sure that you correcly discover the lines of the csv output across the chunk boundaries. We are not recommending any specific streaming csv parser but `csv-parser` and `csv-parse` seem to correctly handle this.
 
-### pipe from a file to table
+### pipe from a file to table (copyIn - copy-from)
 
 ```js
 var fs = require('fs')
@@ -55,6 +55,14 @@ pool.connect(function (err, client, done) {
 ```
 
 _Note_: In version prior to 4.0.0, when copying data into postgresql, it was necessary to wait for the 'end' event of `pg-copy-streams.from` to correctly detect the end of the COPY operation. This was necessary due to the internals of the module but non-standard. This is not true for versions including and after 4.0.0. The end of the COPY operation must now be detected via the standard 'finish' event. **Users of 4.0.0+ should not wait for the 'end' event because it is not fired anymore.**
+
+### duplex stream for replication / logical decoding scenarios (copyBoth - copy-both)
+
+This is a more advanded topic.
+Check the test/copy-both.js file for an example of how this can be used.
+
+_Note regarding logical decoding_: Parsers for logical decoding scenarios are easier to write when copy-both.js pushes chunks that are aligned on the copyData protocol frames. This is not the default mode of operation of copy-both.js in order to increase the streaming performance. If you need the pushed chunks to be alignes on copyData frames, use the `alignOnCopyDataFrame: true` option.
+
 
 ## install
 
@@ -88,6 +96,18 @@ $ PGPORT=5432 PGDATABASE=postgres node copy-from.js
 
 In order to launch the test suite, you need to have a local instance of postgres running on your machine.
 
+Since version 5.1.0 and the implementation of copy-both.js for logical decoding scenarios, your local postgres instance will need to be configured to accept replication scenarios :
+
+```
+postgresq.conf
+  wal_level = logical
+  max_wal_senders > 0
+  max_replication_slots > 0
+
+pg_hba.conf
+  make sure your user can connect using the replication mode
+```
+
 ```sh
 $ PGPORT=5432 PGDATABASE=postgres make test
 ```
@@ -107,7 +127,11 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
 ## changelog
 
-### version 5.x - not yet published
+### version 5.1.0 - published 2020-06-07
+
+This version adds a Duplex stream implementation of the PostgreSQL copyBoth mode described on https://www.postgresql.org/docs/9.6/protocol-flow.html. This mode opens the possibility of dealing with replication and logical decoding scenarios.
+
+- implement copy-both.js
 
 ### version 5.0.0 - published 2020-05-14
 

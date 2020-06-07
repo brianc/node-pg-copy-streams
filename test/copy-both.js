@@ -132,7 +132,7 @@ describe('copy-both', () => {
             client.end()
             return done(err)
           }
-          const copyBothStream = copyBoth(`START_REPLICATION SLOT slotplug LOGICAL 0/0`, { rowMode: true })
+          const copyBothStream = copyBoth(`START_REPLICATION SLOT slotplug LOGICAL 0/0`, { alignOnCopyDataFrame: true })
           client.query(copyBothStream)
           pipeline(copyBothStream, getCopyDataHandlerStream(), (err)=>{})
           finished(copyBothStream, (err) => {
@@ -162,7 +162,7 @@ describe('copy-both', () => {
             client.end()
             return done(err)
           }
-          const copyBothStream = copyBoth(`START_REPLICATION SLOT slotplug LOGICAL 0/0`, { rowMode: true })
+          const copyBothStream = copyBoth(`START_REPLICATION SLOT slotplug LOGICAL 0/0`, { alignOnCopyDataFrame: true })
           client.query(copyBothStream)
           const copyDataHandler = getCopyDataHandlerStream(function () {
             if (this.XLogDataCount >= 3) {

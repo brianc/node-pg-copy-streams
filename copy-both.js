@@ -28,7 +28,7 @@ class CopyStreamQuery extends Duplex {
     this._drained = false
     this._forwarding = false
     this._onReadableEvent = this._onReadable.bind(this)
-    this.rowMode = options ? options.rowMode === true : false
+    this.alignOnCopyDataFrame = options ? options.alignOnCopyDataFrame === true : false
 
     // Writable side
     this._gotCopyInResponse = false
@@ -140,7 +140,7 @@ class CopyStreamQuery extends Duplex {
               this._startCopyIn()
               break
             case code.CopyData:
-              if (this.rowMode) {
+              if (this.alignOnCopyDataFrame) {
                 drained = this._flushCopyData()
               }
               break
@@ -160,9 +160,9 @@ class CopyStreamQuery extends Duplex {
       }
     }
 
-    // When we are not in rowMode, copyData payload is not buffered
+    // When we are not in alignOnCopyDataFrame, copyData payload is not buffered
     // Forward payload bytes as they arrive
-    if (!this.rowMode) {
+    if (!this.alignOnCopyDataFrame) {
       drained = this._flushCopyData()
     }
 

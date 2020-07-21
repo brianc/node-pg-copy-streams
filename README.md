@@ -127,6 +127,12 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
 ## changelog
 
+### version 5.1.1 - published 2020-07-21
+
+Bugfix release handling a corner case when an empty stream is piped into copy-from
+
+- fix copy-from.js handling of an empty source
+
 ### version 5.1.0 - published 2020-06-07
 
 This version adds a Duplex stream implementation of the PostgreSQL copyBoth mode described on https://www.postgresql.org/docs/9.6/protocol-flow.html. This mode opens the possibility of dealing with replication and logical decoding scenarios.

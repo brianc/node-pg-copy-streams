@@ -139,6 +139,19 @@ describe('copy-from', () => {
     runStream()
   })
 
+  it('test empty source - issue #112', (done) => {
+    const fromClient = getClient()
+    fromClient.query('CREATE TEMP TABLE numbers(num int)')
+    const txt = 'COPY numbers FROM STDIN'
+    const query = copy(txt)
+    query.on('finish', function () {
+      fromClient.end()
+      done()
+    })
+    fromClient.query(query)
+    query.end()
+  })
+
   describe('stream compliance', () => {
     describe('successful stream', () => {
       it("emits 1 'finish' (writable stream)", (done) => {

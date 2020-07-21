@@ -40,12 +40,19 @@ class CopyStreamQuery extends Writable {
   }
 
   _final(cb) {
-    this.flush()
-    const Int32Len = 4
-    const finBuffer = Buffer.from([code.CopyDone, 0, 0, 0, Int32Len])
-    this.connection.stream.write(finBuffer)
-    this.connection = null
-    this.cb_flush = cb
+    this.cb_ReadyForQuery = cb
+
+    const self = this
+    const done = function () {
+      const Int32Len = 4
+      const finBuffer = Buffer.from([code.CopyDone, 0, 0, 0, Int32Len])
+      self.connection.stream.write(finBuffer)
+    }
+
+    if (this._gotCopyInResponse) {
+      return this.flush(done)
+    }
+    this.cb = done
   }
 
   flush(callback) {
@@ -82,12 +89,9 @@ class CopyStreamQuery extends Writable {
   handleCopyInResponse(connection) {
     this._gotCopyInResponse = true
     this.uncork()
-    this.flush()
-    if (this.cb) {
-      const { cb } = this
-      this.cb = null
-      cb()
-    }
+    const cb = this.cb || function () {}
+    this.cb = null
+    this.flush(cb)
   }
 
   handleCommandComplete(msg) {
@@ -103,6 +107,7 @@ class CopyStreamQuery extends Writable {
     // triggered after ReadyForQuery
     // we delay the _final callback so that the 'finish' event is
     // sent only after the postgres connection is ready for a new query
-    this.cb_flush()
+    this.cb_ReadyForQuery()
+    this.connection = null
   }
 }

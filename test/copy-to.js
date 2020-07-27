@@ -106,6 +106,7 @@ describe('copy-to', () => {
     })
 
     it('correctly handle BEGIN/COMMIT transaction #113', async () => {
+      if (!pipeline) return done()
       const client = new pg.Client()
       await client.connect()
       await client.query('BEGIN')
@@ -116,7 +117,12 @@ describe('copy-to', () => {
           concat(() => {})
         )
       } catch (err) {
-        throw err
+        const expectedMessage = 'column "invalid" does not exist'
+        assert.notEqual(
+          err.toString().indexOf(expectedMessage),
+          -1,
+          'Error message should mention reason for query failure.'
+        )
       } finally {
         await client.query('COMMIT')
         await client.end()

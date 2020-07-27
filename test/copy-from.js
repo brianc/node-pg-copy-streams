@@ -76,9 +76,14 @@ describe('copy-from', () => {
   it('detect error when field mismatch', (done) => {
     assertCopyFromResult('numbers', '(num int)', [Buffer.from('1,2\n')], (err, rows, stream) => {
       assert.notEqual(err, null)
-      const expectedMessage = 'invalid input syntax for integer'
+      const expectedMessage = /invalid input syntax for (type )?integer/
+      // assert.match(
+      //   err.toString(),
+      //   expectedMessage,
+      //   'Error message should mention reason for query failure.'
+      // )
       assert.notEqual(
-        err.toString().indexOf(expectedMessage),
+        err.toString().search(expectedMessage),
         -1,
         'Error message should mention reason for query failure.'
       )

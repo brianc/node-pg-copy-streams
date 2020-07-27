@@ -8,6 +8,7 @@ const { Writable, finished, pipeline } = require('stream')
 const pg = require('pg')
 const { PassThrough } = require('stream')
 const { Transform } = require('stream')
+const { promisify } = require('util')
 
 const csvParser = require('csv-parser')
 const csvParse = require('csv-parse')
@@ -102,6 +103,24 @@ describe('copy-to', () => {
         )
         done()
       })
+    })
+
+    it('correctly handle BEGIN/COMMIT transaction #113', async () => {
+      const client = new pg.Client()
+      await client.connect()
+      await client.query('BEGIN')
+      try {
+        const outStream = client.query(copy(`COPY (SELECT INVALID SYNTAX) TO STDOUT`))
+        await promisify(pipeline)(
+          outStream,
+          concat(() => {})
+        )
+      } catch (err) {
+        throw err
+      } finally {
+        await client.query('COMMIT')
+        await client.end()
+      }
     })
 
     it('internal postgres error ends copy and emits error', (done) => {

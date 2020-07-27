@@ -19,9 +19,4 @@ env:
   - PGVERSION=11.8 PGUSER=postgres PGDATABASE=postgres
 
 before_script:
-  - sudo bash -c "echo 'host replication all    127.0.0.1/32  trust' >> /etc/postgresql/$PGVERSION/main/pg_hba.conf"
-  - sudo bash -c "sed -i 's/#wal_level = minimal/wal_level = logical/g' /etc/postgresql/$PGVERSION/main/postgresql.conf"
-  - sudo bash -c "sed -i 's/#max_wal_senders = 0/max_wal_senders = 1/g' /etc/postgresql/$PGVERSION/main/postgresql.conf"
-  - sudo bash -c "sed -i 's/#max_replication_slots = 0/max_replication_slots = 1/g' /etc/postgresql/$PGVERSION/main/postgresql.conf"
-  - sudo bash -c "cat /etc/postgresql/$PGVERSION/main/postgresql.conf"
-  - sudo service postgresql restart $PGVERSION
+  - sudo bash -c "cat /etc/postgresql/"

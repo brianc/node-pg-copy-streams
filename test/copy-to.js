@@ -106,7 +106,7 @@ describe('copy-to', () => {
     })
 
     it('correctly handle BEGIN/COMMIT transaction #113', async () => {
-      if (!pipeline) return done()
+      if (!pipeline) return /* node 8 is not tested */
       const client = new pg.Client()
       await client.connect()
       await client.query('BEGIN')

@@ -19,6 +19,14 @@ jobs:
         - PGVERSION=9.6 PGUSER=postgres PGDATABASE=postgres
     - node_js: '10'
       addons:
+        postgresql: '11'
+        apt:
+          packages:
+            - postgresql-11
+      env:
+        - PGVERSION=11 PGUSER=postgres PGDATABASE=postgres
+    - node_js: '10'
+      addons:
         postgresql: '12'
         apt:
           packages:

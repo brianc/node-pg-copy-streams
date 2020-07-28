@@ -42,5 +42,6 @@ before_script:
   - sudo bash -c "sed -i 's/#wal_level = replica/wal_level = logical/g' /etc/postgresql/$PGVERSION/main/postgresql.conf"
   - sudo bash -c "sed -i 's/#max_wal_senders = 0/max_wal_senders = 10/g' /etc/postgresql/$PGVERSION/main/postgresql.conf"
   - sudo bash -c "sed -i 's/#max_replication_slots = 0/max_replication_slots = 10/g' /etc/postgresql/$PGVERSION/main/postgresql.conf"
+  - sudo bash -c "cat /etc/postgresql/$PGVERSION/main/pg_hba.conf"
   - sudo bash -c "cat /etc/postgresql/$PGVERSION/main/postgresql.conf"
   - sudo systemctl restart postgresql@$PGVERSION-main

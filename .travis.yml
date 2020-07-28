@@ -1,26 +1,22 @@
 language: node_js
 
-env:
-  global:
-    - PGUSER=postgres PGDATABASE=postgres
-
 jobs:
   include:
     - node_js: '8'
       addons:
         postgresql: '9.6'
       env:
-        - PGVERSION=9.6
+        - PGVERSION=9.6 PGUSER=postgres PGDATABASE=postgres
     - node_js: '10'
       addons:
         postgresql: '9.6'
       env:
-        - PGVERSION=9.6
+        - PGVERSION=9.6 PGUSER=postgres PGDATABASE=postgres
     - node_js: '12'
       addons:
         postgresql: '9.6'
       env:
-        - PGVERSION=9.6
+        - PGVERSION=9.6 PGUSER=postgres PGDATABASE=postgres
     - node_js: '10'
       addons:
         postgresql: '12'
@@ -28,7 +24,7 @@ jobs:
           packages:
             - postgresql-12
       env:
-        - PGVERSION=12
+        - PGVERSION=12 PGUSER=postgres PGDATABASE=postgres
 
 services:
   - postgresql

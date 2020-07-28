@@ -37,8 +37,8 @@ env:
 
 before_script:
   - sudo bash -c "sed -i 's/^/#/' /etc/postgresql/$PGVERSION/main/pg_hba.conf"
-  - sudo bash -c "echo 'local all all trust' >> /etc/postgresql/$PGVERSION/main/pg_hba.conf"
-  - sudo bash -c "echo 'host replication all    127.0.0.1/32  trust' >> /etc/postgresql/$PGVERSION/main/pg_hba.conf"
+  - sudo bash -c "echo 'host all all 127.0.0.1/32 trust' >> /etc/postgresql/$PGVERSION/main/pg_hba.conf"
+  - sudo bash -c "echo 'host replication all 127.0.0.1/32 trust' >> /etc/postgresql/$PGVERSION/main/pg_hba.conf"
   - sudo bash -c "sed -i 's/port = 5433/port = 5432/g' /etc/postgresql/$PGVERSION/main/postgresql.conf"
   - sudo bash -c "sed -i 's/#wal_level = minimal/wal_level = logical/g' /etc/postgresql/$PGVERSION/main/postgresql.conf"
   - sudo bash -c "sed -i 's/#wal_level = replica/wal_level = logical/g' /etc/postgresql/$PGVERSION/main/postgresql.conf"

@@ -2,11 +2,6 @@ language: node_js
 
 jobs:
   include:
-    - node_js: '8'
-      addons:
-        postgresql: '9.6'
-      env:
-        - PGVERSION=9.6 PGUSER=postgres PGDATABASE=postgres
     - node_js: '10'
       addons:
         postgresql: '9.6'

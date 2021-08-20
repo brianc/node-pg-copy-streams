@@ -14,7 +14,9 @@ class CopyStreamQuery extends Writable {
     this.rowCount = 0
     this._gotCopyInResponse = false
     this.chunks = []
-    this.cb = null
+    this.cb_CopyInResponse = null
+    this.cb_ReadyForQuery = null
+    this.cb_destroy = null
     this.cork()
   }
 
@@ -28,7 +30,7 @@ class CopyStreamQuery extends Writable {
     if (this._gotCopyInResponse) {
       return this.flush(cb)
     }
-    this.cb = cb
+    this.cb_CopyInResponse = cb
   }
 
   _writev(chunks, cb) {
@@ -36,12 +38,30 @@ class CopyStreamQuery extends Writable {
     if (this._gotCopyInResponse) {
       return this.flush(cb)
     }
-    this.cb = cb
+    this.cb_CopyInResponse = cb
+  }
+
+  _destroy(err, cb) {
+    // writable.destroy([error]) was called.
+    // send a CopyFail message that will rollback the COPY operation.
+    // the cb will be called only after the ErrorResponse message is received
+    // from the backend
+    this.cb_destroy = cb
+    const msg = err ? err.message : 'NODE-PG-COPY-STREAMS destroy() was called'
+    const self = this
+    const done = function () {
+      self.connection.sendCopyFail(msg)
+    }
+
+    this.chunks = []
+    if (this._gotCopyInResponse) {
+      return this.flush(done)
+    }
+    this.cb_CopyInResponse = done
   }
 
   _final(cb) {
     this.cb_ReadyForQuery = cb
-
     const self = this
     const done = function () {
       const Int32Len = 4
@@ -52,7 +72,7 @@ class CopyStreamQuery extends Writable {
     if (this._gotCopyInResponse) {
       return this.flush(done)
     }
-    this.cb = done
+    this.cb_CopyInResponse = done
   }
 
   flush(callback) {
@@ -83,14 +103,23 @@ class CopyStreamQuery extends Writable {
   }
 
   handleError(e) {
-    this.emit('error', e)
+    if (this.cb_destroy) {
+      const cb = this.cb_destroy
+      this.cb_destroy = null
+      cb(e)
+    } else {
+      this.emit('error', e)
+    }
+    this.connection = null
   }
 
   handleCopyInResponse(connection) {
     this._gotCopyInResponse = true
-    this.uncork()
-    const cb = this.cb || function () {}
-    this.cb = null
+    if (!this.destroyed) {
+      this.uncork()
+    }
+    const cb = this.cb_CopyInResponse || function () {}
+    this.cb_CopyInResponse = null
     this.flush(cb)
   }
 
@@ -106,7 +135,12 @@ class CopyStreamQuery extends Writable {
   handleReadyForQuery() {
     // triggered after ReadyForQuery
     // we delay the _final callback so that the 'finish' event is
-    // sent only after the postgres connection is ready for a new query
+    // sent only when the ingested data is visible inside postgres and
+    // after the postgres connection is ready for a new query
+
+    // Note: `pg` currently does not call this callback when the backend
+    // sends an ErrorResponse message during the query (for example during
+    // a CopyFail)
     this.cb_ReadyForQuery()
     this.connection = null
   }

@@ -302,5 +302,90 @@ describe('copy-from', () => {
         })
       })
     })
+
+    describe('using destroy() should send copyFail', () => {
+      it('works when destroy() is called via pipeline() before copyInResponse has been received', (done) => {
+        if (!pipeline) return done()
+        createCopyFromQuery('tablename', '(field1 int)', (client, copyFromStream) => {
+          spyOnEmitCalls(copyFromStream)
+          const pt = new PassThrough()
+          pipeline(pt, copyFromStream, (err) => {
+            assert.equal(copyFromStream.emits['error'].length, 1)
+            const expectedMessage = /COPY from stdin failed/
+            assert.notEqual(
+              copyFromStream.emits['error'][0].toString().search(expectedMessage),
+              -1,
+              'Error message should mention that COPY failed'
+            )
+            assert.ok(err)
+            client.end()
+            done()
+          })
+          pt.emit('error', new Error('pipelineError'))
+        })
+      })
+      it('works when destroy() is called via pipeline() after copyInResponse has been received', (done) => {
+        if (!pipeline) return done()
+        createCopyFromQuery('tablename', '(field1 int)', (client, copyFromStream) => {
+          spyOnEmitCalls(copyFromStream)
+          const pt = new PassThrough()
+          pipeline(pt, copyFromStream, (err) => {
+            assert.equal(copyFromStream.emits['error'].length, 1)
+            const expectedMessage = /COPY from stdin failed/
+            assert.notEqual(
+              copyFromStream.emits['error'][0].toString().search(expectedMessage),
+              -1,
+              'Error message should mention that COPY failed'
+            )
+            assert.ok(err)
+            client.end()
+            done()
+          })
+          client.connection.once('copyInResponse', () => {
+            pt.emit('error', new Error('pipelineError'))
+          })
+        })
+      })
+      it('works when destroy() is called before copyInResponse has been received', (done) => {
+        if (!pipeline) return done()
+        createCopyFromQuery('tablename', '(field1 int)', (client, copyFromStream) => {
+          spyOnEmitCalls(copyFromStream)
+          copyFromStream.on('error', (err) => {
+            assert.equal(copyFromStream.emits['error'].length, 1)
+            const expectedMessage = /COPY from stdin failed/
+            assert.notEqual(
+              copyFromStream.emits['error'][0].toString().search(expectedMessage),
+              -1,
+              'Error message should mention that COPY failed'
+            )
+            assert.ok(err)
+            client.end()
+            done()
+          })
+          copyFromStream.destroy(new Error('myError'))
+        })
+      })
+      it('works when destroy() is called after copyInResponse has been received', (done) => {
+        if (!pipeline) return done()
+        createCopyFromQuery('tablename', '(field1 int)', (client, copyFromStream) => {
+          spyOnEmitCalls(copyFromStream)
+          copyFromStream.on('error', (err) => {
+            assert.equal(copyFromStream.emits['error'].length, 1)
+            const expectedMessage = /COPY from stdin failed/
+            assert.notEqual(
+              copyFromStream.emits['error'][0].toString().search(expectedMessage),
+              -1,
+              'Error message should mention that COPY failed'
+            )
+            assert.ok(err)
+            client.end()
+            done()
+          })
+          client.connection.once('copyInResponse', () => {
+            copyFromStream.destroy(new Error('myError'))
+          })
+        })
+      })
+    })
   })
 })

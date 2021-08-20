@@ -56,6 +56,8 @@ pool.connect(function (err, client, done) {
 
 _Note_: In version prior to 4.0.0, when copying data into postgresql, it was necessary to wait for the 'end' event of `pg-copy-streams.from` to correctly detect the end of the COPY operation. This was necessary due to the internals of the module but non-standard. This is not true for versions including and after 4.0.0. The end of the COPY operation must now be detected via the standard 'finish' event. **Users of 4.0.0+ should not wait for the 'end' event because it is not fired anymore.**
 
+In version 6.0.0+, If you have not yet finished ingesting data into a copyFrom stream and you want to ask postgresql to abort the process, you can call `destroy()` on the stream (or let `pipeline` do it for you if it detects an error in the pipeline). This will send a CopyFail message to the backend that will rollback the operation. Please take into account that this will not revert the operation if the CopyDone message has already been sent and is being processed by the backend.
+
 ### duplex stream for replication / logical decoding scenarios (copyBoth - copy-both)
 
 This is a more advanded topic.
@@ -126,6 +128,12 @@ Generally how I work is if you submit a few pull requests and you're interested 
 Since this isn't a module with tons of installs and dependent modules I hope we can work together on this to iterate faster here and make something really useful.
 
 ## changelog
+
+### version 6.0.0 - published 2021-08-20
+
+- Implement _destroy in COPY FROM operations. `pipeline` will automatically send a CopyFail message to the backend is a source triggers an error. cf #115
+
+This version is a major change because some users of the library may have been using other techniques in order to ask the backend to rollback the current operation.
 
 ### version 5.1.1 - published 2020-07-21
 

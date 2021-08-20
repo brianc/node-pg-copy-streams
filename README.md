@@ -6,8 +6,11 @@ COPY FROM / COPY TO for node-postgres. Stream from one database to another, and 
 
 ## how? what? huh?
 
-Did you know that PostgreSQL supports streaming binary data directly into and out of a table?
-This means you can take your favorite CSV or TSV or whatever format file and pipe it directly into an existing PostgreSQL table.
+Did you know that PostgreSQL supports streaming data directly into and out of a table?
+This means you can take your favorite CSV or TSV file and pipe it directly into an existing PostgreSQL table.
+
+PostgreSQL supports text, csv/tsv and binary data. If you have data in another format (say for example JSON) convert it to one of the supported format and pipe it directly into an existing PostgreSQL table !
+
 You can also take a table and pipe it directly to a file, another database, stdout, even to `/dev/null` if you're crazy!
 
 What this module gives you is a [Readable](http://nodejs.org/api/stream.html#stream_class_stream_readable) or [Writable](http://nodejs.org/api/stream.html#stream_class_stream_writable) stream directly into/out of a table in your database.

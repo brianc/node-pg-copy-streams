@@ -5,6 +5,8 @@ const assert = require('assert')
 const _ = require('lodash')
 const pg = require('pg')
 const { finished, pipeline, PassThrough } = require('stream')
+const { promisify } = require('util')
+const { spawn } = require('child_process')
 
 const copy = require('../').from
 
@@ -199,6 +201,23 @@ describe('copy-from', () => {
           pt.end(Buffer.from('1\n'))
         })
       })
+    })
+
+    it('works with await pipeline()', async () => {
+      if (!pipeline) return
+      const client = new pg.Client()
+      await client.connect()
+      await client.query('CREATE TEMP TABLE numbers (num1 int)')
+      try {
+        const total = 1000
+        const seq = spawn('seq', [1, total]).stdout
+        const copyFromStream = client.query(copy(`COPY numbers FROM STDIN`))
+        await promisify(pipeline)(seq, copyFromStream)
+        const res = await client.query('SELECT count(*) FROM numbers')
+        assert.equal(res.rows[0].count, total)
+      } finally {
+        await client.end()
+      }
     })
 
     describe('erroneous stream (syntax error)', () => {

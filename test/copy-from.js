@@ -328,7 +328,7 @@ describe('copy-from', () => {
         createCopyFromQuery('tablename', '(field1 int)', (client, copyFromStream) => {
           spyOnEmitCalls(copyFromStream)
           const pt = new PassThrough()
-          pipeline(pt, copyFromStream, (err) => {
+          copyFromStream.on('error', (err) => {
             assert.equal(copyFromStream.emits['error'].length, 1)
             const expectedMessage = /COPY from stdin failed/
             assert.notEqual(
@@ -336,9 +336,11 @@ describe('copy-from', () => {
               -1,
               'Error message should mention that COPY failed'
             )
-            assert.ok(err)
             client.end()
             done()
+          })
+          pipeline(pt, copyFromStream, (err) => {
+            assert.ok(err)
           })
           pt.emit('error', new Error('pipelineError'))
         })
@@ -348,7 +350,7 @@ describe('copy-from', () => {
         createCopyFromQuery('tablename', '(field1 int)', (client, copyFromStream) => {
           spyOnEmitCalls(copyFromStream)
           const pt = new PassThrough()
-          pipeline(pt, copyFromStream, (err) => {
+          copyFromStream.on('error', (err) => {
             assert.equal(copyFromStream.emits['error'].length, 1)
             const expectedMessage = /COPY from stdin failed/
             assert.notEqual(
@@ -356,9 +358,11 @@ describe('copy-from', () => {
               -1,
               'Error message should mention that COPY failed'
             )
-            assert.ok(err)
             client.end()
             done()
+          })
+          pipeline(pt, copyFromStream, (err) => {
+            assert.ok(err)
           })
           client.connection.once('copyInResponse', () => {
             pt.emit('error', new Error('pipelineError'))

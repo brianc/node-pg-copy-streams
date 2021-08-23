@@ -46,6 +46,7 @@ class CopyStreamQuery extends Writable {
     // send a CopyFail message that will rollback the COPY operation.
     // the cb will be called only after the ErrorResponse message is received
     // from the backend
+    if (this.cb_ReadyForQuery) return cb(err)
     this.cb_destroy = cb
     const msg = err ? err.message : 'NODE-PG-COPY-STREAMS destroy() was called'
     const self = this

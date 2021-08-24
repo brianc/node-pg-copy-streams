@@ -52,6 +52,12 @@ describe('binary', () => {
     return Streamer
   }
 
+  const snapshotBufferMemoryUsage = function () {
+    const mu = process.memoryUsage()
+    const mem = mu.arrayBuffers || mu.external
+    return mem / 1024 / 1024
+  }
+
   it('low copy-to memory usage during large bytea streaming', (done) => {
     const power = 26
     const sql = "COPY (select (repeat('-', CAST(2^" + power + ' AS int)))::bytea) TO STDOUT BINARY'
@@ -63,7 +69,7 @@ describe('binary', () => {
       write(chunk, enc, cb) {
         if (Math.random() < 0.02) {
           global.gc()
-          const memNow = process.memoryUsage().external / 1024 / 1024
+          const memNow = snapshotBufferMemoryUsage()
           try {
             const memLimit = 32 /*MB*/
             const memDiff = Math.abs(memNow - memStart)
@@ -89,7 +95,7 @@ describe('binary', () => {
     })
 
     global.gc(true)
-    const memStart = process.memoryUsage().external / 1024 / 1024
+    const memStart = snapshotBufferMemoryUsage()
     const stream = client.query(query).pipe(lfs).pipe(noop)
 
     stream.on('error', (err) => {

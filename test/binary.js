@@ -65,7 +65,7 @@ describe('binary', () => {
           global.gc()
           const memNow = process.memoryUsage().external / 1024 / 1024
           try {
-            const memLimit = 20 /*MB*/
+            const memLimit = 32 /*MB*/
             const memDiff = Math.abs(memNow - memStart)
             if (memDiff > memLimit) {
               global.gc()

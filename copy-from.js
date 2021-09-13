@@ -25,6 +25,12 @@ class CopyStreamQuery extends Writable {
     connection.query(this.text)
   }
 
+  callback() {
+    // this callback is empty but defining it allows
+    // `pg` to discover it and overwrite it
+    // with its timeout mechanism when query_timeout config is set
+  }
+
   _write(chunk, enc, cb) {
     this.chunks.push({ chunk: chunk, encoding: enc })
     if (this._gotCopyInResponse) {
@@ -104,6 +110,9 @@ class CopyStreamQuery extends Writable {
   }
 
   handleError(e) {
+    // clear `pg` timeout mechanism
+    this.callback()
+
     if (this.cb_destroy) {
       const cb = this.cb_destroy
       this.cb_destroy = null
@@ -142,6 +151,10 @@ class CopyStreamQuery extends Writable {
     // Note: `pg` currently does not call this callback when the backend
     // sends an ErrorResponse message during the query (for example during
     // a CopyFail)
+
+    // clear `pg` timeout mechanism
+    this.callback()
+
     this.cb_ReadyForQuery()
     this.connection = null
   }

@@ -11,8 +11,8 @@ const { spawn } = require('child_process')
 const copy = require('../').from
 
 describe('copy-from', () => {
-  function getClient() {
-    const client = new pg.Client()
+  function getClient(config) {
+    const client = new pg.Client(config)
     client.connect()
     return client
   }
@@ -156,6 +156,34 @@ describe('copy-from', () => {
       done()
     })
     fromClient.query(query)
+    query.end()
+  })
+
+  it('`pg` query_timeout should be properly canceled upon error - issue #125', (done) => {
+    const fromClient = getClient({ query_timeout: 500 })
+    fromClient.query('CREATE TEMP TABLE numbers(num int)')
+    const txt = 'COPY numbers FROM STDIN'
+    const query = copy(txt)
+    query.on('error', function (err) {
+      fromClient.end()
+      done()
+    })
+    fromClient.query(query)
+    query.write('A')
+    query.end()
+  })
+
+  it('`pg` query_timeout should be properly canceled upon success - issue #125', (done) => {
+    const fromClient = getClient({ query_timeout: 1000 })
+    fromClient.query('CREATE TEMP TABLE numbers(num int)')
+    const txt = 'COPY numbers FROM STDIN'
+    const query = copy(txt)
+    query.on('finish', function (err) {
+      fromClient.end()
+      done()
+    })
+    fromClient.query(query)
+    query.write('1')
     query.end()
   })
 

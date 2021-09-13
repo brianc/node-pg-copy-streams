@@ -132,6 +132,10 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
 ## changelog
 
+### version 6.0.2 - published 2021-09-13
+
+- copy-from : fix interaction with `pg` optional timeout mechanism
+
 ### version 6.0.1 - published 2021-08-23
 
 - Bugfix for node 14+. The order of _destroy / _final calls are different before and after node 14 which caused an issue with the COPY FROM _destroy implementation that appeared in version 6.0.0.

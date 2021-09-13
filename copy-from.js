@@ -139,6 +139,9 @@ class CopyStreamQuery extends Writable {
     // sent only when the ingested data is visible inside postgres and
     // after the postgres connection is ready for a new query
 
+    // Call the `pg` handler to clear the query-timeout timer.
+    if (this.callback) this.callback();
+
     // Note: `pg` currently does not call this callback when the backend
     // sends an ErrorResponse message during the query (for example during
     // a CopyFail)

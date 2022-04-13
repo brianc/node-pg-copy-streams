@@ -24,7 +24,7 @@
     "url": "https://github.com/brianc/node-pg-copy-streams/issues"
   },
   "devDependencies": {
-    "async": "~0.2.10",
+    "async": "~3.2.2",
     "benchmark": "^2.1.4",
     "concat-stream": "^2.0.0",
     "csv-parse": "^4.9.0",

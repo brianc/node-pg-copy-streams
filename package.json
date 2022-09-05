@@ -1,6 +1,6 @@
 {
   "name": "pg-copy-streams",
-  "version": "6.0.2",
+  "version": "6.0.3",
   "description": "Low-Level COPY TO and COPY FROM streams for PostgreSQL in JavaScript using",
   "main": "index.js",
   "scripts": {

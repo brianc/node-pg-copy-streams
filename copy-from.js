@@ -40,7 +40,13 @@ class CopyStreamQuery extends Writable {
   }
 
   _writev(chunks, cb) {
-    this.chunks.push(...chunks)
+    // this.chunks.push(...chunks)
+    // => issue #136, RangeError: Maximum call stack size exceeded
+    // Using hybrid approach as advised on https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/apply
+    const QUANTUM = 32768
+    for (let i = 0; i < chunks.length; i += QUANTUM) {
+      this.chunks.push(...chunks.slice(i, Math.min(i + QUANTUM, chunks.length)))
+    }
     if (this._gotCopyInResponse) {
       return this.flush(cb)
     }

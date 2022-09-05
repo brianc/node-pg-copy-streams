@@ -103,7 +103,7 @@ describe('copy-from', () => {
   })
 
   it('correctly handle more heavy scenario', (done) => {
-    const top = 10000
+    const top = 130000
     const chunks = []
     const expected = []
     for (let i = 0; i < top; i++) {
@@ -116,7 +116,7 @@ describe('copy-from', () => {
       assert.equal(stream.rowCount, top, 'should have rowCount ' + top + ' ')
       done()
     })
-  })
+  }).timeout(120000)
 
   it('test client reuse', (done) => {
     const fromClient = getClient()

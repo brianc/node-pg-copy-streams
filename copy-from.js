@@ -43,9 +43,15 @@ class CopyStreamQuery extends Writable {
     // this.chunks.push(...chunks)
     // => issue #136, RangeError: Maximum call stack size exceeded
     // Using hybrid approach as advised on https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/apply
-    const QUANTUM = 32768
-    for (let i = 0; i < chunks.length; i += QUANTUM) {
-      this.chunks.push(...chunks.slice(i, Math.min(i + QUANTUM, chunks.length)))
+    if (this.chunks.length == 0) {
+      this.chunks = chunks
+    } else {
+      // https://stackoverflow.com/questions/22747068/is-there-a-max-number-of-arguments-javascript-functions-can-accept
+      // 100K seems to be a reasonable size for v8
+      const QUANTUM = 125000
+      for (let i = 0; i < chunks.length; i += QUANTUM) {
+        this.chunks.push(...chunks.slice(i, Math.min(i + QUANTUM, chunks.length)))
+      }
     }
     if (this._gotCopyInResponse) {
       return this.flush(cb)

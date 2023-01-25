@@ -475,8 +475,8 @@ describe('copy-to', () => {
           { headers: false },
           [inputPart1, inputPart2],
           [
-            { '0': 'hello', '1': 'world' },
-            { '0': 'crossing', '1': 'boundaries' },
+            { 0: 'hello', 1: 'world' },
+            { 0: 'crossing', 1: 'boundaries' },
           ]
         )
       }

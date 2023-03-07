@@ -39,10 +39,9 @@ pool.connect(function (err, client, done) {
 // async/await
 import { pipeline } from 'node:stream/promises'
 import pg from 'pg'
-const { Pool } = pg
 import { to as copyTo } from 'pg-copy-streams'
 
-const pool = new Pool()
+const pool = new pg.Pool()
 const client = await pool.connect()
 try {
   const stream = client.query(copyTo('COPY my_table TO STDOUT'))
@@ -78,11 +77,9 @@ pool.connect(function (err, client, done) {
 import { pipeline } from 'node:stream/promises'
 import fs from 'node:fs'
 import pg from 'pg'
-const { Pool } = pg
-import pgCopyStreams from 'pg-copy-streams'
-const { from: copyFrom } = pgCopyStreams;
+import { from as copyFrom } from 'pg-copy-streams'
 
-const pool = new Pool()
+const pool = new pg.Pool()
 const client = await pool.connect()
 try {
   const ingestStream = client.query(copyFrom('COPY my_table FROM STDIN'))

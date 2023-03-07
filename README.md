@@ -166,6 +166,10 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
 ## changelog
 
+### version 6.0.5 - published 2023-03-07
+
+- improve ejs/cjs Named exports compatibility for easier async/await usage
+
 ### version 6.0.4 - published 2022-09-05
 ### version 6.0.3 - published 2022-09-05
 

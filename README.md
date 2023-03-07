@@ -24,7 +24,7 @@ If you're not familiar with the feature (I wasn't either) you can read this for 
 
 ```js
 var { Pool } = require('pg')
-var copyTo = require('pg-copy-streams').to
+var { to as copyTo } = require('pg-copy-streams')
 
 var pool = new Pool()
 
@@ -34,6 +34,21 @@ pool.connect(function (err, client, done) {
   stream.on('end', done)
   stream.on('error', done)
 })
+
+
+// async/await
+import { pipeline } from 'node:stream/promises'
+import { Pool } from 'pg'
+import { to as copyTo } from 'pg-copy-streams'
+
+const pool = new Pool()
+const client = await pool.connect()
+try {
+  const stream = await client.query(copyTo('COPY my_table TO STDOUT'))
+  stream.pipe(process.stdout)
+} finally {
+  client.release()
+}
 ```
 
 _Important_: When copying data out of postgresql, postgresql will chunk the data on 64kB boundaries. You should expect rows to be cut across the boundaries of these chunks (the end of a chunk will not always match the end of a row). If you are piping the csv output of postgres into a file, this might not be a problem. But if you are trying to analyse the csv output on-the-fly, you need to make sure that you correctly discover the lines of the csv output across the chunk boundaries. We are not recommending any specific streaming csv parser but `csv-parser` and `csv-parse` seem to correctly handle this.
@@ -41,9 +56,9 @@ _Important_: When copying data out of postgresql, postgresql will chunk the data
 ### pipe from a file to table (copyIn - copy-from)
 
 ```js
-var fs = require('fs')
+var fs = require('node:fs')
 var { Pool } = require('pg')
-var copyFrom = require('pg-copy-streams').from
+var { from as copyFrom } = require('pg-copy-streams')
 
 var pool = new Pool()
 
@@ -55,6 +70,23 @@ pool.connect(function (err, client, done) {
   stream.on('finish', done)
   fileStream.pipe(stream)
 })
+
+
+// async/await
+import { pipeline } from 'node:stream/promises'
+import fs from 'node:fs'
+import { Pool } from 'pg'
+import { from as copyFrom } from 'pg-copy-streams'
+
+const pool = new Pool()
+const client = await pool.connect()
+try {
+  const ingestStream = client.query(copyFrom('COPY my_table FROM STDIN'))
+  const sourceStream = fs.createReadStream('some_file.tsv')
+  await pipeline(sourceStream, ingestStream)
+} finally {
+  client.release()
+}
 ```
 
 _Note_: In version prior to 4.0.0, when copying data into postgresql, it was necessary to wait for the 'end' event of `pg-copy-streams.from` to correctly detect the end of the COPY operation. This was necessary due to the internals of the module but non-standard. This is not true for versions including and after 4.0.0. The end of the COPY operation must now be detected via the standard 'finish' event. **Users of 4.0.0+ should not wait for the 'end' event because it is not fired anymore.**

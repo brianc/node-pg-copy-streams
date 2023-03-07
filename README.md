@@ -38,17 +38,19 @@ pool.connect(function (err, client, done) {
 
 // async/await
 import { pipeline } from 'node:stream/promises'
-import { Pool } from 'pg'
+import pg from 'pg'
+const { Pool } = pg
 import { to as copyTo } from 'pg-copy-streams'
 
 const pool = new Pool()
 const client = await pool.connect()
 try {
-  const stream = await client.query(copyTo('COPY my_table TO STDOUT'))
-  stream.pipe(process.stdout)
+  const stream = client.query(copyTo('COPY my_table TO STDOUT'))
+  await pipeline(stream, process.stdout)
 } finally {
   client.release()
 }
+await pool.end()
 ```
 
 _Important_: When copying data out of postgresql, postgresql will chunk the data on 64kB boundaries. You should expect rows to be cut across the boundaries of these chunks (the end of a chunk will not always match the end of a row). If you are piping the csv output of postgres into a file, this might not be a problem. But if you are trying to analyse the csv output on-the-fly, you need to make sure that you correctly discover the lines of the csv output across the chunk boundaries. We are not recommending any specific streaming csv parser but `csv-parser` and `csv-parse` seem to correctly handle this.
@@ -75,8 +77,10 @@ pool.connect(function (err, client, done) {
 // async/await
 import { pipeline } from 'node:stream/promises'
 import fs from 'node:fs'
-import { Pool } from 'pg'
-import { from as copyFrom } from 'pg-copy-streams'
+import pg from 'pg'
+const { Pool } = pg
+import pgCopyStreams from 'pg-copy-streams'
+const { from: copyFrom } = pgCopyStreams;
 
 const pool = new Pool()
 const client = await pool.connect()
@@ -87,6 +91,7 @@ try {
 } finally {
   client.release()
 }
+await pool.end()
 ```
 
 _Note_: In version prior to 4.0.0, when copying data into postgresql, it was necessary to wait for the 'end' event of `pg-copy-streams.from` to correctly detect the end of the COPY operation. This was necessary due to the internals of the module but non-standard. This is not true for versions including and after 4.0.0. The end of the COPY operation must now be detected via the standard 'finish' event. **Users of 4.0.0+ should not wait for the 'end' event because it is not fired anymore.**

@@ -166,6 +166,10 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
 ## changelog
 
+### version 6.0.6 - published 2023-07-17
+
+- copy-to: fix rowCount in BINARY mode. The file trailer was incorrectly counted as a row
+
 ### version 6.0.5 - published 2023-03-07
 
 - improve ejs/cjs Named exports compatibility for easier async/await usage

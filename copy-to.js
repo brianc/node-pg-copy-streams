@@ -129,10 +129,7 @@ class CopyStreamQuery extends Readable {
           // a full message has been captured
           switch (this._code) {
             case code.CopyOutResponse:
-              break
             case code.CopyData:
-              this.rowCount++
-              break
             // standard interspersed messages.
             // see https://www.postgresql.org/docs/9.6/protocol-flow.html#PROTOCOL-COPY
             case code.ParameterStatus:
@@ -169,7 +166,12 @@ class CopyStreamQuery extends Readable {
     this._cleanup()
   }
 
-  handleCommandComplete() {}
+  handleCommandComplete(msg) {
+    const match = /COPY (\d+)/.exec((msg || {}).text)
+    if (match) {
+      this.rowCount = parseInt(match[1], 10)
+    }
+  }
 
   handleReadyForQuery() {}
 }

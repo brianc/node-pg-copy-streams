@@ -157,6 +157,8 @@ describe('binary', () => {
 
         toClient.query('SELECT * FROM data_copy ORDER BY num', function (err, res) {
           assert.equal(res.rowCount, 3, 'expected 3 rows but got ' + res.rowCount)
+          assert.equal(fromStream.rowCount, 3, 'expected 3 rows observed by fromStream but got ' + fromStream.rowCount)
+          assert.equal(toStream.rowCount, 3, 'expected 3 rows observed by toStream but got ' + toStream.rowCount)
           assert.equal(res.rows[0].num, 1)
           assert.equal(res.rows[0].word, 'hello')
           assert.equal(res.rows[1].num, 2)

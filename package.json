@@ -28,7 +28,7 @@
     "benchmark": "^2.1.4",
     "concat-stream": "^2.0.0",
     "csv-parse": "^4.9.0",
-    "csv-parser": "^2.3.2",
+    "csv-parser": "^3.2.0",
     "duplex-child-process": "^1.0.0",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.11.0",

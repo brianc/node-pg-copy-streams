@@ -11,7 +11,7 @@ const { Transform } = require('stream')
 const { promisify } = require('util')
 
 const csvParser = require('csv-parser')
-const csvParse = require('csv-parse')
+const csvParse = require('csv-parse').parse
 
 const copy = require('../').to
 const code = require('../message-formats')

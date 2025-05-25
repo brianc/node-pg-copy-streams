@@ -92,7 +92,7 @@ describe('copy-to', () => {
       })
     })
 
-    it('correcly handle error in sql request', (done) => {
+    it('correctly handle error in sql request', (done) => {
       assertCopyToResult('COPY --wrong-- TO STDOUT', (err, chunks, result, stream) => {
         assert.notEqual(err, null)
         const expectedMessage = 'syntax error at end of input'

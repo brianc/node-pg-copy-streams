@@ -68,7 +68,7 @@ describe('copy-from', () => {
     })
   }
 
-  it('correcty handles simple case', (done) => {
+  it('correctly handles simple case', (done) => {
     assertCopyFromResult('numbers', '(num int)', [Buffer.from('1\n')], (err, rows, stream) => {
       assert.deepEqual(rows, [[1]])
       done(err)

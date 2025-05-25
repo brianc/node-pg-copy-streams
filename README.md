@@ -215,7 +215,7 @@ This version's major change is a modification in the COPY TO implementation. The
 ### version 4.0.0 - published 2020-05-11
 
 This version's major change is a modification in the COPY FROM implementation. In previous version, copy-from was internally designed as a `Transform` duplex stream. The user-facing API was writable, and the readable side of the `Transform` was piped into the postgres connection stream to copy the data inside the database.
-This led to an issue because `Transform` was emitting its 'finish' too early after the writable side was ended. Postgres had not yet read all the data on the readable side and had not confirmed that the COPY operation was finished. The recommendation was to wait for the 'end' event on the readable side which correcly detected the end of the COPY operation and the fact that the pg connection was ready for new queries.
+This led to an issue because `Transform` was emitting its 'finish' too early after the writable side was ended. Postgres had not yet read all the data on the readable side and had not confirmed that the COPY operation was finished. The recommendation was to wait for the 'end' event on the readable side which correctly detected the end of the COPY operation and the fact that the pg connection was ready for new queries.
 This recommendation worked ok but this way of detecting the end of a writable is not standard and was leading to different issues (interaction with the `finished` and `pipeline` API for example)
 The new copy-from implementation extends writable and now emits 'finish' with the correct timing : after the COPY operation and after the postgres connection has reached the readyForQuery state.
 Another big change in this version is that copy-to now shortcuts the core `pg` parsing during the COPY operation. This avoids double-parsing and avoids the fact that `pg` buffers whole postgres protocol messages.
@@ -232,7 +232,7 @@ In the new implementation, all the data payload received from a postgres chunk i
 
 Some users may in the past have relied on the fact the the copy-to chunk boundaries exactly matched row boundaries. A major difference in the 3.x version is that the module does not offer any guarantee that its chunk boundaries match row boundaries. A row data could (and you have to realize that this will happen) be split across 2 or more chunks depending on the size of the rows and on postgres's own chunking decisions.
 
-As a consequence, when the copy-to stream is piped into a pipeline that does row/CSV parsing, you need to make sure that this pipeline correcly handles rows than span across chunk boundaries. For its tests, this module uses the [csv-parser](https://github.com/mafintosh/csv-parser) module
+As a consequence, when the copy-to stream is piped into a pipeline that does row/CSV parsing, you need to make sure that this pipeline correctly handles rows than span across chunk boundaries. For its tests, this module uses the [csv-parser](https://github.com/mafintosh/csv-parser) module
 
 - Add `prettier` configuration following discussion on brianc/node-postgres#2172
 - Rewrite the copy-to implementation in order to avoid fetching whole rows in memory

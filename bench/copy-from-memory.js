@@ -31,7 +31,7 @@ c.query('DROP TABLE IF EXISTS plugnumber', function () {
 let rssMin = process.memoryUsage().rss / 1024 / 1024
 let rssMax = rssMin
 
-memlog = function () {
+const memlog = function () {
   const rss = process.memoryUsage().rss / 1024 / 1024
   rssMin = Math.min(rss, rssMin)
   rssMax = Math.max(rss, rssMax)

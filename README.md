@@ -166,6 +166,15 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 
 ## changelog
 
+### version 7.0.0 - published 2025-05-27
+
+- "Forked" the obuf project into the repo in order to keep maintain it internally after no response from the maintainer
+  https://github.com/indutny/offset-buffer - License MIT - By Fedor Indutny, 2015
+  open issue asking for transfer of npm ownership of the original obuf project - https://github.com/indutny/offset-buffer/issues/8#issuecomment-2817245503
+  This library has an API that is elegant for protocol/buffer handling, which is why it was chosen originally
+  Original tests were also added to the test suite of `pg-copy-stream` 
+- updated dev dependencies: mocha, eslint, cvs-parse, cvs-parser, pg
+  
 ### version 6.0.6 - published 2023-07-17
 
 - copy-to: fix rowCount in BINARY mode. The file trailer was incorrectly counted as a row

@@ -6,7 +6,7 @@ module.exports = function (txt, options) {
 
 const { Readable } = require('stream')
 const assert = require('assert')
-const BufferList = require('obuf')
+const BufferList = require('./obuf')
 const code = require('./message-formats')
 
 // decoder states

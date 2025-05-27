@@ -38,7 +38,7 @@
     "globals": "^16.2.0",
     "lodash": "^4.17.21",
     "mocha": "^11.5.0",
-    "pg": "^8.8.0",
+    "pg": "^8.16.0",
     "prettier": "^3.5.3"
   },
   "prettier": {
@@ -47,8 +47,5 @@
     "arrowParens": "always",
     "trailingComma": "es5",
     "singleQuote": true
-  },
-  "dependencies": {
-    "obuf": "^1.1.2"
   }
 }

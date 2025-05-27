@@ -5,7 +5,7 @@ const pg = require('pg')
 const async = require('async')
 const copyBoth = require('../copy-both.js')
 const { Transform, pipeline, finished } = require('stream')
-const BufferList = require('obuf')
+const BufferList = require('../obuf')
 
 before(async () => {
   const client = new pg.Client()

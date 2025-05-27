@@ -124,7 +124,7 @@ OffsetBuffer.prototype.copy = function copy(target, targetOff, off, n) {
 }
 
 OffsetBuffer.prototype.take = function take(n) {
-  if (n === 0) return new Buffer.alloc(0)
+  if (n === 0) return Buffer.alloc(0)
 
   this.size -= n
 
@@ -144,7 +144,7 @@ OffsetBuffer.prototype.take = function take(n) {
   }
 
   // Allocate and fill buffer
-  const out = new Buffer.alloc(n)
+  const out = Buffer.alloc(n)
   let toOff = 0
   let startOff = this.offset
   let i

@@ -22,7 +22,9 @@ after(async () => {
   await client.connect()
   try {
     await client.query(`DROP_REPLICATION_SLOT slotplug`)
-  } catch (err) {}
+  } catch (err) {
+    console.log(err)
+  }
   await client.end()
 
   client = new pg.Client()

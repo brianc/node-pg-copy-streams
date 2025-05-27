@@ -169,7 +169,7 @@ Since this isn't a module with tons of installs and dependent modules I hope we 
 ### version 7.0.0 - published 2025-05-27
 
 No new feature. This is a maintenance release.
-The major version was decided because the 'obuf' dependency was internalized and slightly modified to pass prettier, pass eslint and replace deprecated `new Buffer(.)' calls by `Buffer.alloc(.)` which while not beeing a revolution, is worth a major version after (previous version was 2 years ago)
+The major version was decided because the 'obuf' dependency was internalized and slightly modified to pass prettier, pass eslint and replace deprecated `new Buffer(.)` calls by `Buffer.alloc(.)` which while not beeing a revolution, is worth a major version after (previous version was 2 years ago)
 
 - "Forked" the obuf project into the repo in order to keep maintain it internally after no response from the maintainer
   https://github.com/indutny/offset-buffer - License MIT - By Fedor Indutny, 2015

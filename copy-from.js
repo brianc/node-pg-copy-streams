@@ -103,12 +103,10 @@ class CopyStreamQuery extends Writable {
     if (callback) {
       if (ok) {
         callback()
+      } else if (this.chunks.length) {
+        this.connection.stream.once('drain', this.flush.bind(this, callback))
       } else {
-        if (this.chunks.length) {
-          this.connection.stream.once('drain', this.flush.bind(this, callback))
-        } else {
-          this.connection.stream.once('drain', callback)
-        }
+        this.connection.stream.once('drain', callback)
       }
     }
   }

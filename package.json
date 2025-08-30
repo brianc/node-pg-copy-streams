@@ -29,7 +29,7 @@
     "async": "~0.2.10",
     "benchmark": "^2.1.4",
     "concat-stream": "^2.0.0",
-    "csv-parse": "^5.6.0",
+    "csv-parse": "^6.1.0",
     "csv-parser": "^3.2.0",
     "duplex-child-process": "^1.0.0",
     "eslint": "^9.27.0",

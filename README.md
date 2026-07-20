@@ -95,6 +95,8 @@ _Note_: In version prior to 4.0.0, when copying data into postgresql, it was nec
 
 In version 6.0.0+, If you have not yet finished ingesting data into a copyFrom stream and you want to ask postgresql to abort the process, you can call `destroy()` on the stream (or let `pipeline` do it for you if it detects an error in the pipeline). This will send a CopyFail message to the backend that will rollback the operation. Please take into account that this will not revert the operation if the CopyDone message has already been sent and is being processed by the backend.
 
+_Important_: Do not use `pool.query()` with `pg-copy-streams`. The `pg` pool convenience method returns a Promise and does not support the custom query objects used to expose COPY streams. Instead, acquire a client with `pool.connect()` and call `client.query()` as shown above.
+
 ### duplex stream for replication / logical decoding scenarios (copyBoth - copy-both)
 
 This is a more advanded topic.

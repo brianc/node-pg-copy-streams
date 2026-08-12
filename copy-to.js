@@ -29,6 +29,12 @@ class CopyStreamQuery extends Readable {
     this._onReadableEvent = this._onReadable.bind(this)
   }
 
+  callback() {
+    // this callback is empty but defining it allows
+    // `pg` to find it and overwrite it with its own callback
+    // with its timeout mechanism when query_timeout config is set
+  }
+
   submit(connection) {
     this.connection = connection
     this._attach()
@@ -162,6 +168,8 @@ class CopyStreamQuery extends Readable {
   }
 
   handleError(err) {
+    // clear `pg` timeout mechanism
+    this.callback()
     this.emit('error', err)
     this._cleanup()
   }
@@ -173,5 +181,8 @@ class CopyStreamQuery extends Readable {
     }
   }
 
-  handleReadyForQuery() {}
+  handleReadyForQuery() {
+    // clear `pg` timeout mechanism
+    this.callback()
+  }
 }

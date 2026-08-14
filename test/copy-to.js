@@ -18,8 +18,8 @@ const code = require('../message-formats')
 
 describe('copy-to', () => {
   describe('integration tests (postgres)', () => {
-    function getClient() {
-      const client = new pg.Client()
+    function getClient(config) {
+      const client = new pg.Client(config)
       client.connect()
       return client
     }
@@ -102,6 +102,39 @@ describe('copy-to', () => {
           'Error message should mention reason for query failure.'
         )
         done()
+      })
+    })
+
+    it('clears query_timeout after an error - issue #156', (done) => {
+      const queryTimeout = 200
+      const client = getClient({ query_timeout: queryTimeout })
+      const stream = client.query(copy('COPY --wrong-- TO STDOUT'))
+      let errors = 0
+
+      stream.on('error', () => {
+        errors++
+      })
+      setTimeout(() => {
+        assert.equal(errors, 1)
+        client.end(done)
+      }, queryTimeout + 100)
+    })
+
+    it('clears query_timeout after success - issue #156', (done) => {
+      const queryTimeout = 200
+      const client = getClient({ query_timeout: queryTimeout })
+      const stream = client.query(copy('COPY (SELECT 1) TO STDOUT'))
+      let errors = 0
+
+      stream.on('error', () => {
+        errors++
+      })
+      stream.resume()
+      stream.on('end', () => {
+        setTimeout(() => {
+          assert.equal(errors, 0)
+          client.end(done)
+        }, queryTimeout + 100)
       })
     })
 

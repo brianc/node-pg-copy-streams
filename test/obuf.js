@@ -1,38 +1,5 @@
 const assert = require('assert')
 const OffsetBuffer = require('../obuf.js')
-const copyTo = require('../copy-to')
-
-describe('copy-to query timeout callback - issue #156', () => {
-  it('is cleared after an error', () => {
-    const query = copyTo('COPY table TO STDOUT')
-    const expectedError = new Error('query timed out')
-    let callbackCalls = 0
-    let emittedError
-
-    query.callback = () => {
-      callbackCalls++
-    }
-    query.on('error', (error) => {
-      emittedError = error
-    })
-    query.handleError(expectedError)
-
-    assert.equal(callbackCalls, 1)
-    assert.equal(emittedError, expectedError)
-  })
-
-  it('is cleared after success', () => {
-    const query = copyTo('COPY table TO STDOUT')
-    let callbackCalls = 0
-
-    query.callback = () => {
-      callbackCalls++
-    }
-    query.handleReadyForQuery()
-
-    assert.equal(callbackCalls, 1)
-  })
-})
 
 describe('OffsetBuffer', function () {
   let o

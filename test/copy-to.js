@@ -2,7 +2,6 @@
 
 const assert = require('assert')
 
-const _ = require('lodash')
 const concat = require('concat-stream')
 const { Writable, finished, pipeline } = require('stream')
 const pg = require('pg')
@@ -189,7 +188,7 @@ describe('copy-to', () => {
         stream.pipe(
           concat(function (buf) {
             const res = buf.toString('utf8')
-            const exp = _.range(0, generateRows + 1).join('\n') + '\n'
+            const exp = Array.from({ length: generateRows + 1 }, (_, i) => i).join('\n') + '\n'
             assert.equal(res, exp, 'clientReuse: sent & received buffer should be equal')
             currentRunNumber++
             callback()

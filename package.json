@@ -36,7 +36,6 @@
     "eslint-config-prettier": "^10.1.5",
     "eslint-plugin-prettier": "^5.4.0",
     "globals": "^16.2.0",
-    "lodash": "^4.17.21",
     "mocha": "^11.5.0",
     "pg": "^8.16.0",
     "prettier": "^3.5.3"

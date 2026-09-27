@@ -3,7 +3,6 @@
 const assert = require('assert')
 
 const async = require('async')
-const _ = require('lodash')
 const pg = require('pg')
 const concat = require('concat-stream')
 const { Transform, Writable } = require('stream')
@@ -140,7 +139,7 @@ describe('binary', () => {
       'CREATE TABLE IF NOT EXISTS data_copy (LIKE data INCLUDING ALL)',
     ]
 
-    async.eachSeries(queries, _.bind(fromClient.query, fromClient), function (err) {
+    async.eachSeries(queries, fromClient.query.bind(fromClient), function (err) {
       assert.ifError(err)
 
       const fromStream = fromClient.query(to('COPY (SELECT * FROM data) TO STDOUT BINARY'))
@@ -166,7 +165,7 @@ describe('binary', () => {
           assert.equal(res.rows[2].num, 3)
           assert.equal(res.rows[2].word, 'goodbye')
           queries = ['DROP TABLE data', 'DROP TABLE data_copy']
-          async.each(queries, _.bind(fromClient.query, fromClient), function (err) {
+          async.each(queries, fromClient.query.bind(fromClient), function (err) {
             assert.ifError(err)
             fromClient.end()
             toClient.end()

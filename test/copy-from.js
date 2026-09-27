@@ -2,7 +2,6 @@
 
 const assert = require('assert')
 
-const _ = require('lodash')
 const pg = require('pg')
 const { finished, pipeline, PassThrough } = require('stream')
 const { promisify } = require('util')
@@ -125,6 +124,7 @@ describe('copy-from', () => {
     let count = 0
     const countMax = 2
     const card = 100000
+    const numbers = Buffer.from(Array.from({ length: card + 1 }, (_, i) => i).join('\n') + '\n')
     const runStream = function () {
       const stream = fromClient.query(copy(txt))
       stream.on('finish', function () {
@@ -140,8 +140,8 @@ describe('copy-from', () => {
           })
         }
       })
-      stream.write(Buffer.from(_.range(0, card + 1).join('\n') + '\n'))
-      stream.end(Buffer.from(_.range(0, card + 1).join('\n') + '\n'))
+      stream.write(numbers)
+      stream.end(numbers)
     }
     runStream()
   })
